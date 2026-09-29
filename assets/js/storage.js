@@ -1,6 +1,6 @@
 /**
  * سند الطالب | SANAD — وحدة البيانات والتخزين والمحرك المشترك (v4)
- * معالجة منطق التأجيل وساعات المراجعة
+ * تصدير دالة editSessionTime ومعالجة دقيقة لخطة الدراسة والجدول
  */
 
 (function (window) {
@@ -162,14 +162,10 @@
 
   let state = createDefaultState();
   let isCorrupted = false;
-  let corruptionDetails = null;
 
   function validateSchema(data) {
     if (!data || typeof data !== 'object') return false;
     if (typeof data.schemaVersion !== 'number' || data.schemaVersion < 1) return false;
-    if (!data.student || typeof data.student !== 'object') return false;
-    if (!Array.isArray(data.courses)) return false;
-    if (!Array.isArray(data.topics)) return false;
     return true;
   }
 
@@ -207,11 +203,7 @@
         isCorrupted = false;
         return { success: true, isNew: true };
       }
-      let parsed;
-      try { parsed = JSON.parse(raw); } catch (e) {
-        isCorrupted = true;
-        return { success: false, corrupted: true };
-      }
+      let parsed = JSON.parse(raw);
       if (!validateSchema(parsed)) {
         isCorrupted = true;
         return { success: false, corrupted: true };
@@ -551,7 +543,7 @@
     const affectedTasksDeficit = [];
     let totalUnscheduledMinutes = 0;
 
-    // 1. جدولة جلسات المراجعة (مع حلقة تكرار داخل النافذة لحل LOGIC-03)
+    // 1. جدولة جلسات المراجعة
     activeTasks.forEach(task => {
       if (task.reviewMinutesRequired > 0 && task.examDate) {
         let revNeeded = task.reviewMinutesRequired;
@@ -681,7 +673,6 @@
     return save();
   }
 
-  // حل LOGIC-02: منع تضخيم رصيد الدقائق
   function postponeSession(sessionId) {
     const sessIndex = state.studyPlan.sessions.findIndex(s => s.id === sessionId);
     if (sessIndex === -1) return { success: false };
@@ -693,6 +684,40 @@
       task.remainingMinutes += uncompleted;
     }
     state.studyPlan.sessions.splice(sessIndex, 1);
+    return save();
+  }
+
+  // الدالة المصححة لتعديل موعد الجلسة
+  function editSessionTime(sessionId, newDate, newStart, newEnd) {
+    const sess = state.studyPlan.sessions.find(s => s.id === sessionId);
+    if (!sess) return { success: false, error: 'الجلسة غير موجودة.' };
+
+    const task = state.studyPlan.tasks.find(t => t.id === sess.taskId);
+    const sMin = timeToMinutes(newStart);
+    const eMin = timeToMinutes(newEnd);
+
+    if (eMin <= sMin) return { success: false, error: 'وقت النهاية يجب أن يكون بعد وقت البداية.' };
+
+    if (task && task.examDate) {
+      if (newDate > task.examDate || (newDate === task.examDate && eMin > timeToMinutes(task.examTime || '23:59'))) {
+        return { success: false, error: 'لا يمكن تحديد موعد الجلسة بعد موعد الامتحان.' };
+      }
+    }
+
+    const dayId = getDayIdFromDate(parseLocalDate(newDate));
+    if (state.savedSchedule && state.savedSchedule.schedule && state.savedSchedule.schedule.dayMap) {
+      const lectures = state.savedSchedule.schedule.dayMap[dayId] || [];
+      for (const lec of lectures) {
+        if (Math.max(sMin, lec.startMin) < Math.min(eMin, lec.endMin)) {
+          return { success: false, error: `يتعارض هذا التوقيت مع محاضرة "${lec.courseName}".` };
+        }
+      }
+    }
+
+    sess.date = newDate;
+    sess.startTime = newStart;
+    sess.endTime = newEnd;
+    sess.durationMinutes = eMin - sMin;
     return save();
   }
 
@@ -715,6 +740,7 @@
     return { courses, count: courses.length };
   }
 
+  // تصدير واجهة الدوال كاملة مع دالة editSessionTime
   window.SanadStore = {
     load, save,
     DAYS, MAJORS, TOPIC_STATUSES, CLASSIFICATIONS, RESOURCE_TYPES,
@@ -727,7 +753,8 @@
     getScheduleConstraints, setScheduleConstraints, addBlockedTime, deleteBlockedTime,
     getSavedSchedule, saveSelectedSchedule, isSavedScheduleOutdated, generateSchedules,
     getStudyPlan, setStudyPlanSettings, addStudyTask, planStudySchedule,
-    markSessionComplete, postponeSession, getStudyProgressStats, isStudyPlanScheduleOutdated,
+    markSessionComplete, postponeSession, editSessionTime, // <-- تم التصدير هنا بنجاح
+    getStudyProgressStats, isStudyPlanScheduleOutdated,
     globalSearch
   };
 

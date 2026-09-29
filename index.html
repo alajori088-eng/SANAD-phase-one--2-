@@ -6,11 +6,6 @@
   <title>سند الطالب | SANAD — كلية الذكاء الاصطناعي</title>
   <meta name="description" content="منصة دراسية تقنية هادئة لخدمة طلاب كلية الذكاء الاصطناعي في جامعة البلقاء التطبيقية.">
   <link rel="stylesheet" href="./assets/css/styles.css">
-  <link rel="stylesheet" href="./styles.css"> <!-- مسار احتياطي يضمن قراءة التنسيق مهما اختلف مجلد التشغيل -->
-  <style>
-    /* حماية احترازية تمنع ظهور أي نافذة منبثقة قبل اكتمال تحميل التنسيقات */
-    .modal-backdrop { display: none !important; }
-  </style>
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 </head>
 <body>
@@ -137,7 +132,7 @@
 
           <div class="study-toolbar-actions">
             <button type="button" class="btn btn-primary btn-sm" id="btn-open-add-study-task">+ إضافة مهمة دراسية</button>
-            <button type="button" class="btn btn-secondary btn-sm" id="btn-open-study-settings">⚙️️ إعدادات الفراغ والجلسات</button>
+            <button type="button" class="btn btn-secondary btn-sm" id="btn-open-study-settings">⚙ إعدادات الفراغ والجلسات</button>
             <button type="button" class="btn btn-accent btn-sm" id="btn-trigger-redistribute">🔄 إعادة توزيع الخطة</button>
           </div>
         </div>
@@ -256,7 +251,7 @@
         <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: var(--space-sm); margin-bottom: var(--space-md);">
           <div id="schedule-tabs-container" class="schedule-tabs"></div>
           <div style="display: flex; gap: var(--space-sm);">
-            <button type="button" class="btn btn-secondary btn-sm" id="btn-print-this-schedule">🖨️ طباعة الجدول (PDF)</button>
+            <button type="button" class="btn btn-secondary btn-sm" id="btn-print-this-schedule">🖨️️ طباعة الجدول (PDF)</button>
             <button type="button" class="btn btn-accent btn-sm" id="btn-save-this-schedule">💾 حفظ كجدولي المعتمد</button>
           </div>
         </div>
@@ -659,7 +654,7 @@
     </div>
   </div>
 
-  <!-- نافذة إضافة فترة ممنوعة (مُضافة لإنهاء الخلل) -->
+  <!-- نافذة إضافة فترة ممنوعة -->
   <div id="modal-blocked-time" class="modal-backdrop" role="dialog" aria-modal="true">
     <div class="modal-dialog">
       <div class="modal-header">
@@ -810,9 +805,8 @@
     </div>
   </div>
 
+  <!-- السكربتات المعتمدة النظيفة وفق مسار مشروعك -->
   <script src="./assets/js/storage.js"></script>
   <script src="./assets/js/main.js"></script>
-  <script src="./storage.js"></script> <!-- احتياطي في حال كان الملف في الجذر -->
-  <script src="./main.js"></script>
 </body>
 </html>

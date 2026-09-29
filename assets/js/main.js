@@ -1,6 +1,6 @@
 /**
  * سند الطالب | SANAD — المحرك البرمجي الموحد والشامل
- * يدمج المراحل 1 و 2 و 3 و 4 مع معالجة كافة النوافذ والأحداث
+ * إدارة مرنة للنوافذ المنبثقة (.is-open) وتكامل كافة أدوات المنظومة
  */
 
 (function () {
@@ -155,18 +155,33 @@
   let currentGeneratedSchedules = [];
   let currentActiveScheduleIndex = 0;
 
-  // إدارة النوافذ المنبثقة
-  function showModal(m) { if (m) m.style.display = 'flex'; }
-  function hideModal(m) { if (m) m.style.display = 'none'; }
+  // إدارة النوافذ المنبثقة بشكل مرن وسلس (Dynamic Modal Controller)
+  function showModal(m) {
+    if (!m) return;
+    m.classList.add('is-open');
+    const firstInput = m.querySelector('input:not([type="hidden"]), select, textarea');
+    if (firstInput) setTimeout(() => firstInput.focus(), 50);
+  }
 
+  function hideModal(m) {
+    if (!m) return;
+    m.classList.remove('is-open');
+  }
+
+  // إغلاق النافذة عند النقر على الخلفية أو أزرار الإغلاق
   document.querySelectorAll('.modal-backdrop').forEach(modal => {
     modal.addEventListener('click', (e) => {
-      if (e.target === modal || e.target.closest('[data-dismiss="modal"]')) hideModal(modal);
+      if (e.target === modal || e.target.closest('[data-dismiss="modal"]')) {
+        hideModal(modal);
+      }
     });
   });
 
+  // إغلاق أي نافذة مفتوحة بزر Escape
   document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') document.querySelectorAll('.modal-backdrop').forEach(m => hideModal(m));
+    if (e.key === 'Escape') {
+      document.querySelectorAll('.modal-backdrop.is-open').forEach(m => hideModal(m));
+    }
   });
 
   // قائمة الهاتف
@@ -174,7 +189,7 @@
     elements.menuToggle.addEventListener('click', () => elements.mainNav.classList.toggle('is-open'));
   }
 
-  // شريط الطالب
+  // شريط بيانات الطالب
   function renderStudentProfile() {
     const student = store.getStudent();
     if (elements.studentGreeting) {
@@ -657,7 +672,7 @@
       `;
     }
 
-    const days = store.DAYS.slice(0, 5); // من الأحد للخميس
+    const days = store.DAYS.slice(0, 5); // الأحد إلى الخميس
     let desktopHtml = '<tr>';
     days.forEach(d => {
       const meetings = schedule.dayMap[d.id] || [];
@@ -803,7 +818,7 @@
     const unH = (deficit.totalUnscheduledMinutes / 60).toFixed(1);
     elements.studyPlanDeficitCard.style.display = 'block';
     elements.studyPlanDeficitCard.innerHTML = `
-      <h4>⚠️️ عجز في الوقت المتاح للدراسة (${deficit.totalUnscheduledMinutes} دقيقة • ${unH} ساعة)</h4>
+      <h4>⚠️ عجز في الوقت المتاح للدراسة (${deficit.totalUnscheduledMinutes} دقيقة • ${unH} ساعة)</h4>
       <p style="font-size:0.85rem;">لم تكفِ فترات فراغك لتغطية كامل المهام قبل الامتحانات:</p>
       <ul style="list-style:disc; padding-right:20px; font-size:0.85rem; margin-top:4px;">
         ${deficit.affectedTasks.map(t => `<li><strong>${store.escapeHtml(t.taskTitle)}:</strong> تبقى ${t.unscheduledMinutes} دقيقة.</li>`).join('')}
@@ -886,6 +901,7 @@
           ${!isCompleted ? `
             <button type="button" class="btn btn-accent btn-sm" data-action="complete-sess" data-id="${sess.id}">✔ أنجزت</button>
             <button type="button" class="btn btn-secondary btn-sm" data-action="partial-sess" data-id="${sess.id}">⏱ جزء منها</button>
+            <button type="button" class="btn btn-secondary btn-sm" data-action="edit-time-sess" data-id="${sess.id}">✎ التوقيت</button>
             <button type="button" class="btn btn-danger btn-sm" data-action="postpone-sess" data-id="${sess.id}">تأجيل</button>
           ` : '<span style="font-size:0.8rem; color:var(--color-muted);">تم الإنجاز</span>'}
         </div>
@@ -908,6 +924,14 @@
       if (elements.partialSessionDurationMax) elements.partialSessionDurationMax.textContent = sess.durationMinutes;
       if (elements.inputPartialMinutes) elements.inputPartialMinutes.value = Math.round(sess.durationMinutes / 2);
       showModal(elements.modalPartialComplete);
+    } else if (act === 'edit-time-sess') {
+      const sess = store.getStudyPlan().sessions.find(s => s.id === id);
+      if (!sess) return;
+      pendingEditSessionId = id;
+      if (elements.inputEditSessionDate) elements.inputEditSessionDate.value = sess.date;
+      if (elements.inputEditSessionStart) elements.inputEditSessionStart.value = sess.startTime;
+      if (elements.inputEditSessionEnd) elements.inputEditSessionEnd.value = sess.endTime;
+      showModal(elements.modalEditSessionTime);
     } else if (act === 'postpone-sess') {
       store.postponeSession(id);
       renderStudyPlanUI();
@@ -919,6 +943,21 @@
     if (!pendingPartialSessionId) return;
     store.markSessionComplete(pendingPartialSessionId, parseInt(elements.inputPartialMinutes.value, 10));
     hideModal(elements.modalPartialComplete);
+    renderStudyPlanUI();
+  });
+
+  elements.formEditSessionTime?.addEventListener('submit', (e) => {
+    e.preventDefault();
+    if (!pendingEditSessionId) return;
+    const date = elements.inputEditSessionDate.value;
+    const start = elements.inputEditSessionStart.value;
+    const end = elements.inputEditSessionEnd.value;
+    const res = store.editSessionTime(pendingEditSessionId, date, start, end);
+    if (!res.success) {
+      alert(res.error);
+      return;
+    }
+    hideModal(elements.modalEditSessionTime);
     renderStudyPlanUI();
   });
 
