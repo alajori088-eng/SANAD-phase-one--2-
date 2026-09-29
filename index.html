@@ -6,6 +6,8 @@
   <title>سند الطالب | SANAD — كلية الذكاء الاصطناعي</title>
   <meta name="description" content="منصة دراسية تقنية هادئة لخدمة طلاب كلية الذكاء الاصطناعي في جامعة البلقاء التطبيقية.">
   <link rel="stylesheet" href="./assets/css/styles.css">
+  <!-- قارئ الصور البصري المحلي (يعمل داخل متصفح الطالب مباشرة) -->
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 </head>
 <body>
 
@@ -44,7 +46,7 @@
       <div>
         <strong>تنبيه بخصوص البيانات المحفوظة:</strong>
         <p id="corruption-message" style="font-size: 0.9rem; margin-top: 4px;"></p>
-        <span style="font-size: 0.8rem; color: #FDE68A;">لم يتم مسح بياناتك أو استبدالها بصمت لحمايتها من الفقدان.</span>
+        <span style="font-size: 0.8rem; color: #FDE68A;">لم يتم مسح بياناتك لحمايتها من الفقدان.</span>
       </div>
     </div>
 
@@ -58,7 +60,7 @@
     <section id="hero" class="hero-section" aria-labelledby="hero-heading">
       <div class="hero-pre">كلية الذكاء الاصطناعي • جامعة البلقاء التطبيقية</div>
       <h1 id="hero-heading" class="hero-title">
-        مساحة دراسية تقنية هادئة تمكّنك من <span>تنظيم مسارك الأكاديمي</span>
+        مساحة دراسية تقنية تمكّنك من <span>تنظيم مسارك الأكاديمي</span>
       </h1>
       <p class="hero-desc">
         مبادرة طلابية مستقلة لخدمة طلبة الكلية في توثيق المواد، توليد الجداول الخالية من التعارضات، ومتابعة التحصيل الدراسي.
@@ -88,13 +90,13 @@
         </div>
       </div>
       <div style="display: flex; align-items: center; gap: var(--space-md); flex-wrap: wrap;">
-        <span class="storage-privacy-note">🔒 بياناتك محفوظة محلياً في هذا المتصفح فقط</span>
+        <span class="storage-privacy-note">🔒 بياناتك وصورك تُعالج محلياً في جهازك فقط</span>
         <button type="button" class="btn btn-secondary btn-sm" id="btn-edit-profile">تعديل بياناتي</button>
       </div>
     </section>
 
     <!-- ================================================================= -->
-    <!-- قسم «رتّب دوامي» (المرحلة الثالثة) -->
+    <!-- قسم «رتّب دوامي» -->
     <!-- ================================================================= -->
     <section id="schedule" class="schedule-section" aria-labelledby="schedule-heading">
       <div class="section-header">
@@ -108,7 +110,7 @@
         <span><strong>تنويه:</strong> الجداول مبنية على مدخلاتك، ولا تعكس توفر المقاعد أو الاتصال بنظام تسجيل الجامعة.</span>
       </div>
 
-      <!-- تنبيه مراجعة الجدول المحفوظ عند تعديل الشعب لاحقاً -->
+      <!-- تنبيه مراجعة الجدول المحفوظ -->
       <div id="saved-schedule-outdated-alert" class="alert-banner" style="display: none; margin-bottom: var(--space-lg);" role="alert">
         <span>⚠️</span>
         <div>
@@ -126,7 +128,14 @@
         <div class="config-card">
           <div class="config-card-title">
             <span>1. المواد والشعب المتاحة</span>
-            <button type="button" class="btn btn-primary btn-sm" id="btn-open-add-section">+ إضافة شعبة</button>
+            <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+              <button type="button" class="btn btn-accent btn-sm" id="btn-open-smart-import" title="تصوير أو رفع صورة جدول الشعب أو لصقه">
+                📷 تصوير / استيراد ذكي
+              </button>
+              <button type="button" class="btn btn-primary btn-sm" id="btn-open-add-section">
+                + إضافة يدوية
+              </button>
+            </div>
           </div>
           <span class="form-help">حددي المواد التي تنوين تسجيلها لهذا الفصل:</span>
 
@@ -138,7 +147,7 @@
           </div>
         </div>
 
-        <!-- البطاقة 2: القيود الإلزامية والتفضيلات التحسينية -->
+        <!-- البطاقة 2: القيود الإلزامية والتفضيلات -->
         <div class="config-card">
           <div class="config-card-title">
             <span>2. القيود الإلزامية والتفضيلات</span>
@@ -162,7 +171,7 @@
             </div>
 
             <div class="form-group" style="margin-bottom: 8px;">
-              <label for="constraint-travel-buffer" class="form-label">وقت الانتقال بين اللقاءات الوجاهية (بالدقائق)</label>
+              <label for="constraint-travel-buffer" class="form-label">وقت الانتقال بين المحاضرات الوجاهية</label>
               <select id="constraint-travel-buffer" class="form-select">
                 <option value="0">0 دقائق (محاضرات متلاصقة مباشرة)</option>
                 <option value="5">5 دقائق</option>
@@ -170,7 +179,7 @@
                 <option value="15">15 دقيقة</option>
                 <option value="20">20 دقيقة</option>
               </select>
-              <span class="form-help">يُطبق وقت الانتقال بين المحاضرات الوجاهية فقط.</span>
+              <span class="form-help">يُطبق وقت الانتقال بين اللقاءات الوجاهية فقط.</span>
             </div>
 
             <div class="form-group" style="margin-bottom: 8px;">
@@ -243,7 +252,7 @@
           <div id="schedule-metrics-pills" class="metrics-row"></div>
           <div id="schedule-unmet-preferences"></div>
           <div class="gap-explanation">
-            💡 <strong>طريقة حساب الفراغات:</strong> يُحسب مجموع الفراغات بجمع الدقائق الفاصلة بين نهاية كل محاضرة وبداية المحاضرة التي تليها في نفس اليوم الدراسي، دون احتساب ما قبل بداية اليوم أو ما بعد انتهائه.
+            💡 <strong>طريقة حساب الفراغات:</strong> يُحسب مجموع الفراغات بجمع الدقائق الفاصلة بين نهاية كل محاضرة وبداية المحاضرة التي تليها في نفس اليوم الدراسي.
           </div>
         </div>
 
@@ -277,35 +286,29 @@
       </div>
 
       <div id="courses-list-view">
-        <div class="courses-toolbar" style="background:var(--color-card); border:1px solid var(--color-border); border-radius:var(--radius-card); padding:var(--space-md); margin-bottom:var(--space-lg); display:flex; flex-direction:column; gap:var(--space-md);">
-          <div style="display:flex; justify-content:space-between; align-items:center; gap:var(--space-md); flex-wrap:wrap;">
-            <input type="search" id="course-search-input" class="form-input" placeholder="بحث بالاسم أو الرمز..." style="width: 220px;">
-            <button type="button" class="btn btn-primary" id="btn-open-add-course">+ إضافة مادة جديدة</button>
-          </div>
+        <div class="courses-toolbar" style="background:var(--color-card); border:1px solid var(--color-border); border-radius:var(--radius-card); padding:var(--space-md); margin-bottom:var(--space-lg); display:flex; justify-content:space-between; align-items:center; gap:var(--space-md); flex-wrap:wrap;">
+          <input type="search" id="course-search-input" class="form-input" placeholder="بحث بالاسم أو الرمز..." style="width: 220px;">
+          <button type="button" class="btn btn-primary" id="btn-open-add-course">+ إضافة مادة جديدة</button>
         </div>
         <div id="courses-grid" class="courses-grid" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(320px, 1fr)); gap:var(--space-lg);"></div>
       </div>
 
-      <div id="course-details-view" class="course-details-view">
-        <button type="button" class="details-nav-back" id="btn-back-to-courses">← العودة إلى قائمة المواد</button>
-        <div class="details-header">
+      <div id="course-details-view" class="course-details-view" style="display:none;">
+        <button type="button" class="btn btn-secondary btn-sm" id="btn-back-to-courses" style="margin-bottom: var(--space-md);">← العودة إلى قائمة المواد</button>
+        <div class="info-card" style="margin-bottom: var(--space-lg);">
           <span class="course-code" id="detail-course-code">AI101</span>
           <h3 class="course-title" id="detail-course-name" style="font-size: 1.8rem; margin-top: 8px;">اسم المادة</h3>
-          <div class="course-meta" style="margin-top: 8px;">
+          <div class="course-meta" style="margin-top: 8px; display:flex; gap:8px;">
             <span class="badge-meta" id="detail-course-class">متطلب كلية</span>
             <span class="badge-meta" id="detail-course-hours">3 ساعات</span>
           </div>
-          <div class="manual-input-notice">
-            <span>ℹ️</span>
-            <span>تنبيه: هذه المعلومات مدخلة يدويًا بواسطة الطالب وليست خطة رسمية معتمدة من الكلية.</span>
-          </div>
-          <p id="detail-course-desc" class="details-desc-box"></p>
+          <p id="detail-course-desc" style="margin-top: 12px; color: var(--color-muted);"></p>
         </div>
         <div class="topics-container">
-          <div class="topics-header">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: var(--space-md);">
             <h4 style="font-size: 1.3rem; color: var(--color-text);">موضوعات المادة ومصادرها</h4>
           </div>
-          <div id="detail-topics-list" class="topics-list"></div>
+          <div id="detail-topics-list" class="topics-list" style="display:flex; flex-direction:column; gap:var(--space-md);"></div>
         </div>
       </div>
     </section>
@@ -332,9 +335,9 @@
       </div>
       <div class="cards-grid">
         <article class="info-card" style="border-color: var(--color-primary);">
-          <span class="tag-badge" style="margin-bottom: 8px;">مفعلة بالكامل (المرحلة الثالثة)</span>
+          <span class="tag-badge" style="margin-bottom: 8px;">مفعلة بالكامل (مدعومة بالذكاء البصري)</span>
           <h3>رتّب دوامي</h3>
-          <p>توليد ومقارنة حتى 3 جداول خالية من التعارضات وفق قيودك وتفضيلاتك بدقة.</p>
+          <p>استيراد الشُعب بالتصوير أو اللصق السريع، وتوليد 3 جداول صالحة دون تعارض.</p>
         </article>
         <article class="info-card" style="border-color: var(--color-primary);">
           <span class="tag-badge" style="margin-bottom: 8px;">مفعلة بالكامل</span>
@@ -363,18 +366,86 @@
 
   <footer class="site-footer">
     <div class="container footer-content">
-      <div>سند الطالب | SANAD — مبادرة طلابية مستقلة (المرحلة الثالثة)</div>
+      <div>سند الطالب | SANAD — مبادرة طلابية مستقلة</div>
       <div>نظام تشغيل محلي بالكامل دون إعلانات أو تتبع</div>
     </div>
   </footer>
 
   <!-- النوافذ المنبثقة (Modals) -->
 
-  <!-- نافذة إضافة وتعديل شعبة -->
+  <!-- نافذة الاستيراد الذكي (OCR والتصوير واللصق السريع) -->
+  <div id="modal-smart-import" class="modal-backdrop" role="dialog" aria-modal="true">
+    <div class="modal-dialog" style="max-width: 680px;">
+      <div class="modal-header">
+        <h3 class="modal-title">📷 استيراد الشعب ذكياً من بوابة الجامعة</h3>
+        <button type="button" class="icon-btn" data-dismiss="modal">✕</button>
+      </div>
+      <div class="modal-body">
+        
+        <!-- اختيار المادة المستهدفة -->
+        <div class="form-group">
+          <label for="smart-import-course-select" class="form-label">المادة المراد إضافة الشعب لها:</label>
+          <select id="smart-import-course-select" class="form-select"></select>
+        </div>
+
+        <!-- تبويبات نمط الاستيراد (صورة أو نص) -->
+        <div class="import-tabs-bar">
+          <button type="button" class="import-tab-btn active" id="tab-btn-image">📸 تصوير أو رفع صورة الجدول</button>
+          <button type="button" class="import-tab-btn" id="tab-btn-paste">📋 لصق نص الجدول المنسوخ</button>
+        </div>
+
+        <!-- نمط الصورة والكاميرا -->
+        <div id="import-mode-image" class="import-mode-content">
+          <div class="ocr-dropzone" id="ocr-dropzone">
+            <span style="font-size: 2rem;">📷</span>
+            <div style="font-weight: bold; margin-top: 4px;">اسحبي لقطة شاشة الجدول هنا، أو اضغطي لاختيار صورة / فتح الكاميرا</div>
+            <span style="font-size: 0.8rem; color: var(--color-muted);">يدعم لقطات شاشة نظام التسجيل من اللابتوب أو تصوير الشاشة بالهاتف</span>
+            <input type="file" id="ocr-file-input" accept="image/*" style="display: none;">
+          </div>
+
+          <!-- شريط حالة ومؤشر تقدم التحليل -->
+          <div id="ocr-progress-box" class="ocr-progress-box" style="display: none;">
+            <div style="display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 4px;">
+              <span id="ocr-status-text">جارٍ مسح الصورة واستخراج الأوقات...</span>
+              <span id="ocr-percentage-text">0%</span>
+            </div>
+            <div class="progress-bar-bg">
+              <div id="ocr-progress-fill" class="progress-bar-fill" style="width: 0%;"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- نمط اللصق السريع للنص -->
+        <div id="import-mode-paste" class="import-mode-content" style="display: none;">
+          <div class="form-group">
+            <label for="smart-paste-textarea" class="form-label">انسخي أسطر جدول الشعب من بوابة التسجيل والصقيها هنا:</label>
+            <textarea id="smart-paste-textarea" class="form-textarea" rows="5" placeholder="مثال لما ينسخ من البوابة:&#10;1  ح ث خ  09:30 - 11:00  خوارزمي 101&#10;2  ن ر     11:00 - 12:30  مختبر 3"></textarea>
+          </div>
+          <button type="button" class="btn btn-secondary btn-sm" id="btn-parse-pasted-text">🔍 تحليل النص المنسوخ فوراً</button>
+        </div>
+
+        <!-- قسم المعاينة والاعتماد -->
+        <div id="import-preview-section" style="display: none; border-top: 1px solid var(--color-border); padding-top: var(--space-md); margin-top: var(--space-sm);">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <strong style="color: var(--color-accent); font-size: 0.95rem;">الشُعب المستخرجة بنجاح (المعاينة):</strong>
+            <span id="parsed-count-badge" class="tag-badge">0 شعب</span>
+          </div>
+          <div id="parsed-sections-container" style="max-height: 220px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px;"></div>
+        </div>
+
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">إلغاء</button>
+        <button type="button" class="btn btn-accent" id="btn-confirm-save-imported" style="display: none;">✅ اعتماد وإضافة الشُعب للمادة</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- نافذة إضافة وتعديل شعبة يدوية -->
   <div id="modal-section" class="modal-backdrop" role="dialog" aria-modal="true">
     <div class="modal-dialog">
       <div class="modal-header">
-        <h3 class="modal-title">إضافة شعبة جديدة</h3>
+        <h3 class="modal-title">إضافة شعبة يدوياً</h3>
         <button type="button" class="icon-btn" data-dismiss="modal">✕</button>
       </div>
       <form id="form-section">
@@ -403,13 +474,13 @@
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" data-dismiss="modal">إلغاء</button>
-          <button type="submit" class="btn btn-primary">حفظ الشعبة بالكامل</button>
+          <button type="submit" class="btn btn-primary">حفظ الشعبة</button>
         </div>
       </form>
     </div>
   </div>
 
-  <!-- نافذة إضافة فترة ممنوعة (عمل / استراحة) -->
+  <!-- نافذة إضافة فترة ممنوعة -->
   <div id="modal-blocked-time" class="modal-backdrop" role="dialog" aria-modal="true">
     <div class="modal-dialog">
       <div class="modal-header">

@@ -1,6 +1,6 @@
 /**
  * سند الطالب | SANAD — منطق الواجهة وتجربة المستخدم
- * المرحلة الثالثة: دمج واجهة «رتّب دوامي» مع إدارة المواد والبحث
+ * المرحلة الثالثة المحدثة: دمج القارئ البصري الذكي (OCR) ومحلل نصوص البوابة الجامعية
  */
 
 (function () {
@@ -44,14 +44,13 @@
     detailCourseClass: document.getElementById('detail-course-class'),
     detailCourseDesc: document.getElementById('detail-course-desc'),
     detailTopicsList: document.getElementById('detail-topics-list'),
-    openEditCurrentCourseBtn: document.getElementById('btn-edit-current-course'),
-    openAddTopicBtn: document.getElementById('btn-open-add-topic'),
 
     // عناصر «رتّب دوامي»
     savedScheduleWarning: document.getElementById('saved-schedule-outdated-alert'),
     coursePickerList: document.getElementById('schedule-course-picker'),
     sectionsManagerList: document.getElementById('schedule-sections-list'),
     btnOpenAddSection: document.getElementById('btn-open-add-section'),
+    btnOpenSmartImport: document.getElementById('btn-open-smart-import'),
     btnGenerateSchedule: document.getElementById('btn-generate-schedule'),
     scheduleResultsContainer: document.getElementById('schedule-results-container'),
     scheduleTabsContainer: document.getElementById('schedule-tabs-container'),
@@ -73,15 +72,31 @@
     blockedTimesList: document.getElementById('blocked-times-list'),
     btnOpenAddBlocked: document.getElementById('btn-open-add-blocked'),
 
+    // عناصر الاستيراد الذكي (OCR ولصق النص)
+    smartImportModal: document.getElementById('modal-smart-import'),
+    smartImportCourseSelect: document.getElementById('smart-import-course-select'),
+    tabBtnImage: document.getElementById('tab-btn-image'),
+    tabBtnPaste: document.getElementById('tab-btn-paste'),
+    importModeImage: document.getElementById('import-mode-image'),
+    importModePaste: document.getElementById('import-mode-paste'),
+    ocrDropzone: document.getElementById('ocr-dropzone'),
+    ocrFileInput: document.getElementById('ocr-file-input'),
+    ocrProgressBox: document.getElementById('ocr-progress-box'),
+    ocrStatusText: document.getElementById('ocr-status-text'),
+    ocrPercentageText: document.getElementById('ocr-percentage-text'),
+    ocrProgressFill: document.getElementById('ocr-progress-fill'),
+    smartPasteTextarea: document.getElementById('smart-paste-textarea'),
+    btnParsePastedText: document.getElementById('btn-parse-pasted-text'),
+    importPreviewSection: document.getElementById('import-preview-section'),
+    parsedCountBadge: document.getElementById('parsed-count-badge'),
+    parsedSectionsContainer: document.getElementById('parsed-sections-container'),
+    btnConfirmSaveImported: document.getElementById('btn-confirm-save-imported'),
+
     // النوافذ المنبثقة
     profileModal: document.getElementById('modal-profile'),
     profileForm: document.getElementById('form-profile'),
     courseModal: document.getElementById('modal-course'),
     courseForm: document.getElementById('form-course'),
-    topicModal: document.getElementById('modal-topic'),
-    topicForm: document.getElementById('form-topic'),
-    resourceModal: document.getElementById('modal-resource'),
-    resourceForm: document.getElementById('form-resource'),
     sectionModal: document.getElementById('modal-section'),
     sectionForm: document.getElementById('form-section'),
     blockedModal: document.getElementById('modal-blocked-time'),
@@ -95,6 +110,7 @@
   let deleteAction = null;
   let currentGeneratedSchedules = [];
   let currentActiveScheduleIndex = 0;
+  let stagedParsedSections = [];
 
   // تنبيه تلف البيانات
   if (store.isCorrupted() && elements.corruptedBanner && elements.corruptionMsg) {
@@ -106,8 +122,6 @@
   function showModal(m) {
     if (!m) return;
     m.style.display = 'flex';
-    const firstInput = m.querySelector('input, select, textarea');
-    if (firstInput) firstInput.focus();
   }
 
   function hideModal(m) {
@@ -137,7 +151,7 @@
     });
   }
 
-  // تحديث واجهة الطالب
+  // بيانات الطالب
   function renderStudentProfile() {
     const student = store.getStudent();
     if (elements.studentGreeting) {
@@ -156,98 +170,439 @@
     }
   }
 
-  if (elements.editProfileBtn) {
-    elements.editProfileBtn.addEventListener('click', () => {
-      const s = store.getStudent();
-      const nameInput = document.getElementById('input-student-name');
-      const majorInput = document.getElementById('select-student-major');
-      const yearInput = document.getElementById('input-student-year');
-      if (nameInput) nameInput.value = s.firstName || '';
-      if (majorInput) majorInput.value = s.majorId || '';
-      if (yearInput) yearInput.value = s.planYear || '';
-      showModal(elements.profileModal);
-    });
-  }
+  elements.editProfileBtn?.addEventListener('click', () => {
+    const s = store.getStudent();
+    document.getElementById('input-student-name').value = s.firstName || '';
+    document.getElementById('select-student-major').value = s.majorId || '';
+    document.getElementById('input-student-year').value = s.planYear || '';
+    showModal(elements.profileModal);
+  });
 
-  if (elements.profileForm) {
-    elements.profileForm.addEventListener('submit', (e) => {
-      e.preventDefault();
-      store.setStudent({
-        firstName: document.getElementById('input-student-name')?.value || '',
-        majorId: document.getElementById('select-student-major')?.value || '',
-        planYear: document.getElementById('input-student-year')?.value || ''
+  elements.profileForm?.addEventListener('submit', (e) => {
+    e.preventDefault();
+    store.setStudent({
+      firstName: document.getElementById('input-student-name')?.value || '',
+      majorId: document.getElementById('select-student-major')?.value || '',
+      planYear: document.getElementById('input-student-year')?.value || ''
+    });
+    renderStudentProfile();
+    hideModal(elements.profileModal);
+  });
+
+  // -------------------------------------------------------------
+  // محرك التحليل الذكي لنصوص وأوقات الجامعات (Jordanian Universities Parser)
+  // -------------------------------------------------------------
+
+  function parseUniversityScheduleText(rawText) {
+    if (!rawText || typeof rawText !== 'string') return [];
+
+    // تنظيف الأسطر وتوحيد الأرقام والرموز
+    const clean = rawText
+      .replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d)) // تحويل الأرقام الهندية للعربية القياسية
+      .replace(/[ـ_]/g, ' ')
+      .replace(/[\r\n]+/g, '\n');
+
+    const lines = clean.split('\n');
+    const sections = [];
+    let currentSecNum = 1;
+
+    lines.forEach((line) => {
+      const trimmed = line.trim();
+      if (!trimmed || trimmed.length < 5) return;
+
+      // 1. استخراج الأوقات بنظام (HH:MM - HH:MM)
+      const timeRegex = /(\d{1,2})[:.](\d{2})\s*(?:-|–|إلى|to)\s*(\d{1,2})[:.](\d{2})/i;
+      const timeMatch = trimmed.match(timeRegex);
+      if (!timeMatch) return;
+
+      let startH = parseInt(timeMatch[1], 10);
+      const startM = timeMatch[2];
+      let endH = parseInt(timeMatch[3], 10);
+      const endM = timeMatch[4];
+
+      // معالجة الأوقات بنظام 12 ساعة (مثلاً 01:00 إلى 02:30 تعني بعد الظهر)
+      if (startH >= 1 && startH <= 7) startH += 12;
+      if (endH >= 1 && endH <= 7) endH += 12;
+      if (endH < startH) endH += 12;
+
+      const formattedStart = `${String(startH).padStart(2, '0')}:${startM}`;
+      const formattedEnd = `${String(endH).padStart(2, '0')}:${endM}`;
+
+      // 2. استخراج الأيام (دعم أنماط الجامعات: ح ث خ / ن ر / الأيام المكتوبة)
+      const days = [];
+      const lower = trimmed.toLowerCase();
+
+      if (/ح\s*ث\s*خ/i.test(trimmed) || /أحد\s*ثلاثاء\s*خميس/i.test(trimmed)) {
+        days.push('sun', 'tue', 'thu');
+      } else if (/ن\s*ر/i.test(trimmed) || /إثنين\s*أربعاء/i.test(trimmed) || /اثنين\s*اربعاء/i.test(trimmed)) {
+        days.push('mon', 'wed');
+      } else {
+        if (/أحد|احد/i.test(trimmed)) days.push('sun');
+        if (/إثنين|اثنين/i.test(trimmed)) days.push('mon');
+        if (/ثلاثاء/i.test(trimmed)) days.push('tue');
+        if (/أربعاء|اربعاء/i.test(trimmed)) days.push('wed');
+        if (/خميس/i.test(trimmed)) days.push('thu');
+      }
+
+      if (days.length === 0) {
+        // افتراض الأحد والثلاثاء والخميس إن لم يُذكر لتفادي ضياع الوقت
+        days.push('sun', 'tue', 'thu');
+      }
+
+      // 3. فحص ما إذا كان اللقاء مختبراً أو تدريباً عملياً
+      const isLab = /مختبر|عملي|lab/i.test(trimmed);
+
+      // 4. استخراج رقم الشعبة إن وُجد، أو ترقيمه تلقائياً
+      const secMatch = trimmed.match(/شعبة\s*[:#-]?\s*(\d+)/i) || trimmed.match(/sec(?:tion)?\s*[:#-]?\s*(\d+)/i);
+      let secNumber = secMatch ? secMatch[1] : String(currentSecNum++);
+
+      // 5. استخراج القاعة أو المبنى
+      let location = '';
+      const locMatch = trimmed.match(/(?:قاعة|مبنى|مختبر|مدرج)\s*([A-Za-z0-9\u0600-\u06FF\s]+)/i);
+      if (locMatch) {
+        location = locMatch[0].trim().slice(0, 25);
+      }
+
+      // تجهيز كائن اللقاءات للشعبة
+      const meetings = days.map(d => ({
+        day: d,
+        startTime: formattedStart,
+        endTime: formattedEnd,
+        location: location,
+        type: /عن\s*بُعد|اونلاين|online/i.test(trimmed) ? 'online' : 'in_person',
+        isLab: isLab
+      }));
+
+      sections.push({
+        tempId: 'tmp_' + Math.random().toString(36).substr(2, 6),
+        sectionNumber: secNumber,
+        isPinned: false,
+        meetings: meetings
       });
-      renderStudentProfile();
-      hideModal(elements.profileModal);
     });
+
+    return sections;
   }
 
-  // البحث الشامل
-  if (elements.globalSearchInput && elements.searchResultsPanel) {
-    elements.globalSearchInput.addEventListener('input', (e) => {
-      const q = e.target.value.trim();
-      if (!q) {
-        elements.searchResultsPanel.style.display = 'none';
-        return;
-      }
-      const results = store.globalSearch(q);
-      if (results.count === 0) {
-        elements.searchResultsPanel.innerHTML = `<div class="search-empty">لم يتم العثور على أي نتائج تطابق "${store.escapeHtml(q)}"</div>`;
-        elements.searchResultsPanel.style.display = 'block';
-        return;
-      }
-      let html = '';
-      if (results.courses.length > 0) {
-        html += `<div class="search-category-title">المواد الدراسية (${results.courses.length})</div>`;
-        results.courses.forEach(c => {
-          html += `<div class="search-item" data-type="course" data-id="${c.id}">
-            <div class="search-item-info">
-              <span class="search-item-title">${store.escapeHtml(c.name)}</span>
-              <span class="search-item-sub">${c.code ? store.escapeHtml(c.code) + ' — ' : ''}${store.CLASSIFICATIONS[c.classification] || ''}</span>
-            </div>
-            <span class="tag-badge">عرض المادة</span>
-          </div>`;
-        });
-      }
-      if (results.topics.length > 0) {
-        html += `<div class="search-category-title">الموضوعات (${results.topics.length})</div>`;
-        results.topics.forEach(t => {
-          const status = store.TOPIC_STATUSES[t.status] || store.TOPIC_STATUSES.not_started;
-          html += `<div class="search-item" data-type="topic" data-course-id="${t.courseId}">
-            <div class="search-item-info">
-              <span class="search-item-title">${store.escapeHtml(t.title)}</span>
-              <span class="search-item-sub">مادة: ${store.escapeHtml(t.courseName)}</span>
-            </div>
-            <span class="status-badge ${status.color}">${status.label}</span>
-          </div>`;
-        });
-      }
-      elements.searchResultsPanel.innerHTML = html;
-      elements.searchResultsPanel.style.display = 'block';
-    });
+  // -------------------------------------------------------------
+  // منطق نافذة الاستيراد الذكي (OCR والتصوير واللصق)
+  // -------------------------------------------------------------
 
-    elements.searchResultsPanel.addEventListener('click', (e) => {
-      const item = e.target.closest('.search-item');
-      if (!item) return;
-      const type = item.getAttribute('data-type');
-      if (type === 'course') openCourseDetails(item.getAttribute('data-id'));
-      else if (type === 'topic') openCourseDetails(item.getAttribute('data-course-id'));
-      elements.searchResultsPanel.style.display = 'none';
-      elements.globalSearchInput.value = '';
-    });
+  elements.btnOpenSmartImport?.addEventListener('click', () => {
+    const courses = store.getCourses();
+    if (!courses || courses.length === 0) {
+      alert('تنبيه: أضيفي مادة دراسية أولاً في قسم "تخصصي وموادي" لكي تستوردي الشعب لها.');
+      openCourseModal();
+      return;
+    }
+
+    if (elements.smartImportCourseSelect) {
+      elements.smartImportCourseSelect.innerHTML = courses.map(c => `
+        <option value="${c.id}">${store.escapeHtml(c.name)} ${c.code ? `(${store.escapeHtml(c.code)})` : ''}</option>
+      `).join('');
+    }
+
+    stagedParsedSections = [];
+    renderParsedSectionsPreview();
+    if (elements.ocrProgressBox) elements.ocrProgressBox.style.display = 'none';
+    if (elements.smartPasteTextarea) elements.smartPasteTextarea.value = '';
+    showModal(elements.smartImportModal);
+  });
+
+  // التبديل بين تبويب الصورة وتبويب النص
+  elements.tabBtnImage?.addEventListener('click', () => {
+    elements.tabBtnImage.classList.add('active');
+    elements.tabBtnPaste.classList.remove('active');
+    elements.importModeImage.style.display = 'block';
+    elements.importModePaste.style.display = 'none';
+  });
+
+  elements.tabBtnPaste?.addEventListener('click', () => {
+    elements.tabBtnPaste.classList.add('active');
+    elements.tabBtnImage.classList.remove('active');
+    elements.importModePaste.style.display = 'block';
+    elements.importModeImage.style.display = 'none';
+  });
+
+  // معالجة اللصق السريع للنص
+  elements.btnParsePastedText?.addEventListener('click', () => {
+    const text = elements.smartPasteTextarea.value.trim();
+    if (!text) {
+      alert('الرجاء لصق نص من جدول التسجيل أولاً.');
+      return;
+    }
+
+    const parsed = parseUniversityScheduleText(text);
+    if (parsed.length === 0) {
+      alert('لم يتم التعرف على أي أوقات شعب في النص المنسوخ. تأكدي من احتوائه على الأوقات مثل: 09:30 - 11:00');
+      return;
+    }
+
+    stagedParsedSections = parsed;
+    renderParsedSectionsPreview();
+  });
+
+  // معالجة اختيار أو سحب الصورة للـ OCR
+  elements.ocrDropzone?.addEventListener('click', () => {
+    elements.ocrFileInput.click();
+  });
+
+  elements.ocrDropzone?.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    elements.ocrDropzone.classList.add('dragover');
+  });
+
+  elements.ocrDropzone?.addEventListener('dragleave', () => {
+    elements.ocrDropzone.classList.remove('dragover');
+  });
+
+  elements.ocrDropzone?.addEventListener('drop', (e) => {
+    e.preventDefault();
+    elements.ocrDropzone.classList.remove('dragover');
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      handleOcrImage(e.dataTransfer.files[0]);
+    }
+  });
+
+  elements.ocrFileInput?.addEventListener('change', (e) => {
+    if (e.target.files && e.target.files[0]) {
+      handleOcrImage(e.target.files[0]);
+    }
+  });
+
+  // تشغيل القارئ البصري المحلي (Tesseract.js)
+  async function handleOcrImage(file) {
+    if (!window.Tesseract) {
+      alert('تعذر تحميل محرك القراءة البصري. يمكنكِ التبديل لتبويب "📋 لصق نص الجدول" ونسخ النص من البوابة مباشرة دون مشاكل.');
+      return;
+    }
+
+    elements.ocrProgressBox.style.display = 'block';
+    elements.ocrStatusText.textContent = 'جارٍ تشغيل الماسح الضوئي وقراءة الأرقام...';
+    elements.ocrPercentageText.textContent = '0%';
+    elements.ocrProgressFill.style.width = '0%';
+
+    try {
+      const result = await window.Tesseract.recognize(
+        file,
+        'ara+eng', // يدعم قراءة النصوص العربية وأرقام ورموز الساعات بالإنجليزية
+        {
+          logger: (m) => {
+            if (m.status === 'recognizing text') {
+              const p = Math.round((m.progress || 0) * 100);
+              elements.ocrPercentageText.textContent = `${p}%`;
+              elements.ocrProgressFill.style.width = `${p}%`;
+              elements.ocrStatusText.textContent = `جارٍ استخراج وتفكيك نصوص الجدول (${p}%)...`;
+            }
+          }
+        }
+      );
+
+      elements.ocrStatusText.textContent = 'اكتمل التحليل!';
+      const extractedText = result.data.text;
+      const parsed = parseUniversityScheduleText(extractedText);
+
+      if (parsed.length === 0) {
+        alert('تمت قراءة الصورة بنجاح ولكن لم يتم العثور على أوقات بصيغة واضحة (مثل: 09:30 - 11:00). يُرجى التأكد من وضوح أرقام الأوقات في لقطة الشاشة أو استخدام خيار اللصق السريع.');
+        return;
+      }
+
+      stagedParsedSections = parsed;
+      renderParsedSectionsPreview();
+
+    } catch (err) {
+      console.error(err);
+      alert('حدث خطأ أثناء قراءة الصورة. يمكنك استخدام تبويب "لصق نص الجدول" كبديل سريع ومباشر.');
+    }
   }
 
-  // عرض بطاقات المواد
+  // عرض المعاينة للشعب المستخرجة وتأكيدها
+  function renderParsedSectionsPreview() {
+    if (!elements.importPreviewSection || !elements.parsedSectionsContainer) return;
+
+    if (stagedParsedSections.length === 0) {
+      elements.importPreviewSection.style.display = 'none';
+      elements.btnConfirmSaveImported.style.display = 'none';
+      return;
+    }
+
+    elements.importPreviewSection.style.display = 'block';
+    elements.btnConfirmSaveImported.style.display = 'inline-flex';
+    elements.parsedCountBadge.textContent = `${stagedParsedSections.length} شعبة مستخرجة`;
+
+    elements.parsedSectionsContainer.innerHTML = stagedParsedSections.map((sec, idx) => {
+      const meetDesc = sec.meetings.map(m => {
+        const dayName = store.DAYS.find(d => d.id === m.day)?.name || m.day;
+        return `${dayName} (${m.startTime}-${m.endTime})${m.isLab ? ' [مختبر]' : ''}`;
+      }).join(' • ');
+
+      return `
+        <div class="parsed-preview-item" data-tmp-id="${sec.tempId}">
+          <div>
+            <strong>شعبة: </strong>
+            <input type="text" class="form-input" value="${store.escapeHtml(sec.sectionNumber)}" style="width: 60px; padding: 2px 6px; font-size: 0.8rem; display: inline-block;" data-action="edit-parsed-num" data-idx="${idx}">
+            <span style="color: var(--color-muted); font-size: 0.8rem; margin-right: 8px;">${store.escapeHtml(meetDesc)}</span>
+          </div>
+          <button type="button" class="icon-btn" data-action="remove-parsed-row" data-idx="${idx}" style="color: var(--color-danger);" title="حذف هذا السطر">✕</button>
+        </div>`;
+    }).join('');
+  }
+
+  // أحداث التعديل والحذف في المعاينة
+  elements.parsedSectionsContainer?.addEventListener('input', (e) => {
+    if (e.target.matches('[data-action="edit-parsed-num"]')) {
+      const idx = parseInt(e.target.getAttribute('data-idx'), 10);
+      if (stagedParsedSections[idx]) {
+        stagedParsedSections[idx].sectionNumber = e.target.value.trim();
+      }
+    }
+  });
+
+  elements.parsedSectionsContainer?.addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-action="remove-parsed-row"]');
+    if (!btn) return;
+    const idx = parseInt(btn.getAttribute('data-idx'), 10);
+    stagedParsedSections.splice(idx, 1);
+    renderParsedSectionsPreview();
+  });
+
+  // حفظ جميع الشعب المستخرجة للمادة دفعة واحدة بنقرة زر
+  elements.btnConfirmSaveImported?.addEventListener('click', () => {
+    const courseId = elements.smartImportCourseSelect.value;
+    if (!courseId) {
+      alert('يرجى اختيار المادة المراد إضافة الشعب لها.');
+      return;
+    }
+
+    if (stagedParsedSections.length === 0) return;
+
+    let addedCount = 0;
+    stagedParsedSections.forEach(sec => {
+      const res = store.addSection({
+        courseId: courseId,
+        sectionNumber: sec.sectionNumber || '1',
+        isPinned: sec.isPinned,
+        meetings: sec.meetings
+      });
+      if (res.success) addedCount++;
+    });
+
+    hideModal(elements.smartImportModal);
+    renderScheduleSectionsList();
+    renderCourses();
+    checkSavedScheduleStatus();
+    alert(`تمت إضافة ${addedCount} شعبة بنجاح إلى المادة المختارة!`);
+  });
+
+  // -------------------------------------------------------------
+  // إدارة الشعب اليدوية والمواد
+  // -------------------------------------------------------------
+
+  elements.btnOpenAddSection?.addEventListener('click', () => {
+    const courses = store.getCourses();
+    if (!courses || courses.length === 0) {
+      alert('تنبيه: يجب إضافة مادة دراسية واحدة على الأقل أولاً لكي تتمكني من ربط الشعبة ومواعيدها بها.');
+      openCourseModal();
+      return;
+    }
+
+    const select = document.getElementById('select-section-course');
+    if (select) {
+      select.innerHTML = courses.map(c => `<option value="${c.id}">${store.escapeHtml(c.name)}</option>`).join('');
+    }
+
+    elements.sectionForm?.reset();
+    const cont = document.getElementById('meetings-rows-container');
+    if (cont) {
+      cont.innerHTML = '';
+      addMeetingRow();
+    }
+    showModal(elements.sectionModal);
+  });
+
+  function addMeetingRow() {
+    const cont = document.getElementById('meetings-rows-container');
+    if (!cont) return;
+    const idx = cont.children.length;
+    const div = document.createElement('div');
+    div.className = 'meeting-input-row';
+    div.style.cssText = 'background:var(--color-bg); border:1px solid var(--color-border); padding:8px; border-radius:6px; margin-bottom:8px; display:flex; flex-direction:column; gap:6px;';
+    div.innerHTML = `
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <span style="font-size:0.8rem; font-weight:bold; color:var(--color-accent);">لقاء (${idx + 1})</span>
+        ${idx > 0 ? `<button type="button" class="btn btn-danger btn-sm" data-action="remove-row" style="padding:2px 6px; font-size:0.75rem;">حذف اللقاء</button>` : ''}
+      </div>
+      <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:6px;">
+        <select class="form-select m-day" required>
+          <option value="sun">الأحد</option>
+          <option value="mon">الإثنين</option>
+          <option value="tue">الثلاثاء</option>
+          <option value="wed">الأربعاء</option>
+          <option value="thu">الخميس</option>
+        </select>
+        <input type="time" class="form-input m-start" value="09:30" required>
+        <input type="time" class="form-input m-end" value="11:00" required>
+      </div>
+      <div style="display:grid; grid-template-columns: 1fr 1fr; gap:6px;">
+        <input type="text" class="form-input m-loc" placeholder="القاعة / المبنى (اختياري)">
+        <select class="form-select m-type">
+          <option value="in_person">وجاهي</option>
+          <option value="online">عن بُعد</option>
+        </select>
+      </div>
+      <label style="font-size:0.8rem; color:var(--color-muted); display:flex; align-items:center; gap:4px; margin-top:2px;">
+        <input type="checkbox" class="m-is-lab"> هذا اللقاء مختبر / عملي إلزامي
+      </label>
+    `;
+
+    div.querySelector('[data-action="remove-row"]')?.addEventListener('click', () => div.remove());
+    cont.appendChild(div);
+  }
+
+  document.getElementById('btn-add-meeting-row')?.addEventListener('click', addMeetingRow);
+
+  elements.sectionForm?.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const rows = document.querySelectorAll('.meeting-input-row');
+    const meetings = [];
+    rows.forEach(r => {
+      const day = r.querySelector('.m-day')?.value;
+      const start = r.querySelector('.m-start')?.value;
+      const end = r.querySelector('.m-end')?.value;
+      const loc = r.querySelector('.m-loc')?.value || '';
+      const type = r.querySelector('.m-type')?.value || 'in_person';
+      const isLab = r.querySelector('.m-is-lab')?.checked || false;
+      if (day && start && end) {
+        meetings.push({ day, startTime: start, endTime: end, location: loc, type, isLab });
+      }
+    });
+
+    const res = store.addSection({
+      courseId: document.getElementById('select-section-course')?.value,
+      sectionNumber: document.getElementById('input-section-number')?.value,
+      isPinned: document.getElementById('check-pin-section')?.checked || false,
+      meetings
+    });
+
+    if (!res.success) {
+      alert(res.error);
+      return;
+    }
+    hideModal(elements.sectionModal);
+    renderScheduleSectionsList();
+    renderCourses();
+  });
+
+  // عرض بطاقات المواد والشعب
   function renderCourses() {
     const allCourses = store.getCourses();
-
     if (!elements.coursesGrid) return;
 
     if (allCourses.length === 0) {
       elements.coursesGrid.innerHTML = `
         <div class="empty-state">
           <h3 class="empty-state-title">دليلك الدراسي فارغ حاليًا</h3>
-          <p class="empty-state-desc">أضف أول مادة دراسية للبدء بتنظيم شعبها وموضوعاتها ومصادرها ومواعيد الدوام.</p>
+          <p class="empty-state-desc">أضف أول مادة دراسية للبدء بتنظيم شعبها ومصادرها ومواعيد الدوام.</p>
           <button type="button" class="btn btn-primary" id="btn-empty-add-course">+ أضف أول مادة</button>
         </div>`;
       document.getElementById('btn-empty-add-course')?.addEventListener('click', () => openCourseModal());
@@ -298,102 +653,6 @@
     renderScheduleCoursePicker();
   }
 
-  // أحداث التفاعل مع بطاقات المواد
-  elements.coursesGrid?.addEventListener('click', (e) => {
-    const btn = e.target.closest('[data-action]');
-    if (!btn) return;
-    const action = btn.getAttribute('data-action');
-    const id = btn.getAttribute('data-id');
-    if (action === 'toggle-fav') { store.toggleCourseFavorite(id); renderCourses(); }
-    else if (action === 'toggle-sem') { store.toggleCourseCurrentSemester(id); renderCourses(); }
-    else if (action === 'view-details') openCourseDetails(id);
-    else if (action === 'edit-course') openCourseModal(id);
-    else if (action === 'delete-course') confirmDeleteCourse(id);
-  });
-
-  function openCourseDetails(courseId) {
-    const course = store.getCourse(courseId);
-    if (!course) return;
-    currentViewCourseId = courseId;
-    if (elements.detailCourseName) elements.detailCourseName.textContent = course.name;
-    if (elements.detailCourseCode) elements.detailCourseCode.textContent = course.code || 'بدون رمز';
-    if (elements.detailCourseHours) elements.detailCourseHours.textContent = course.hours ? `${course.hours} ساعات` : 'غير محدد';
-    if (elements.detailCourseClass) elements.detailCourseClass.textContent = store.CLASSIFICATIONS[course.classification] || 'غير محدد';
-    if (elements.detailCourseDesc) elements.detailCourseDesc.textContent = course.description || 'لم يُضف وصف لهذه المادة بعد.';
-    renderCourseTopics(courseId);
-    if (elements.coursesListView) elements.coursesListView.style.display = 'none';
-    if (elements.courseDetailsView) elements.courseDetailsView.style.display = 'block';
-  }
-
-  function renderCourseTopics(courseId) {
-    const topics = store.getTopicsByCourse(courseId);
-    if (!elements.detailTopicsList) return;
-    if (topics.length === 0) {
-      elements.detailTopicsList.innerHTML = `<div class="empty-state" style="padding:1.5rem;"><h3 class="empty-state-title" style="font-size:1rem;">لم يُضف محتوى بعد</h3><button type="button" class="btn btn-primary btn-sm" id="btn-first-top">+ أضف أول موضوع</button></div>`;
-      document.getElementById('btn-first-top')?.addEventListener('click', () => openTopicModal(null, courseId));
-      return;
-    }
-    let html = '';
-    topics.forEach(t => {
-      const res = store.getResourcesByTopic(t.id);
-      html += `
-        <div class="topic-card" data-topic-id="${t.id}">
-          <div class="topic-card-header">
-            <h4 class="topic-title">${store.escapeHtml(t.title)}</h4>
-            <div class="topic-controls">
-              <select class="filter-select" data-action="change-topic-status" data-topic-id="${t.id}">
-                <option value="not_started" ${t.status === 'not_started' ? 'selected' : ''}>لم أبدأ</option>
-                <option value="in_progress" ${t.status === 'in_progress' ? 'selected' : ''}>قيد الدراسة</option>
-                <option value="completed" ${t.status === 'completed' ? 'selected' : ''}>مكتمل</option>
-                <option value="needs_review" ${t.status === 'needs_review' ? 'selected' : ''}>بحاجة مراجعة</option>
-              </select>
-              <button type="button" class="icon-btn" data-action="delete-topic" data-topic-id="${t.id}">🗑</button>
-            </div>
-          </div>
-          <div class="topic-resources">
-            <button type="button" class="btn btn-secondary btn-sm" data-action="add-res" data-topic-id="${t.id}">+ إضافة مصدر</button>
-            <div class="resources-list" style="margin-top:8px;">
-              ${res.map(r => `<div class="resource-item"><a href="${store.escapeHtml(r.url)}" target="_blank" class="resource-link">🔗 ${store.escapeHtml(r.title)}</a><button type="button" class="icon-btn" data-action="del-res" data-res-id="${r.id}">✕</button></div>`).join('')}
-            </div>
-          </div>
-        </div>`;
-    });
-    elements.detailTopicsList.innerHTML = html;
-  }
-
-  elements.detailTopicsList?.addEventListener('change', (e) => {
-    if (e.target.matches('[data-action="change-topic-status"]')) {
-      store.updateTopic(e.target.getAttribute('data-topic-id'), { status: e.target.value });
-      renderCourses();
-    }
-  });
-
-  elements.detailTopicsList?.addEventListener('click', (e) => {
-    const btn = e.target.closest('[data-action]');
-    if (!btn) return;
-    const act = btn.getAttribute('data-action');
-    if (act === 'delete-topic') {
-      store.deleteTopic(btn.getAttribute('data-topic-id'));
-      renderCourseTopics(currentViewCourseId);
-    } else if (act === 'add-res') {
-      openResourceModal(currentViewCourseId, btn.getAttribute('data-topic-id'));
-    } else if (act === 'del-res') {
-      store.deleteResource(btn.getAttribute('data-res-id'));
-      renderCourseTopics(currentViewCourseId);
-    }
-  });
-
-  elements.backToCoursesBtn?.addEventListener('click', () => {
-    if (elements.courseDetailsView) elements.courseDetailsView.style.display = 'none';
-    if (elements.coursesListView) elements.coursesListView.style.display = 'block';
-    currentViewCourseId = null;
-    renderCourses();
-  });
-
-  // -------------------------------------------------------------
-  // منطق واجهة «رتّب دوامي»
-  // -------------------------------------------------------------
-
   function renderScheduleCoursePicker() {
     const courses = store.getCourses();
     if (!elements.coursePickerList) return;
@@ -420,7 +679,7 @@
     if (!elements.sectionsManagerList) return;
     const sections = store.getSections();
     if (sections.length === 0) {
-      elements.sectionsManagerList.innerHTML = '<p style="color:var(--color-muted); font-size:0.85rem;">لم تُضف أي شعب بعد. اضغطي على زر "+ إضافة شعبة" بالأعلى لإدخال المواعيد.</p>';
+      elements.sectionsManagerList.innerHTML = '<p style="color:var(--color-muted); font-size:0.85rem;">لم تُضف أي شعب بعد. استخدمي زر التصوير الذكي 📷 أو الإضافة اليدوية بالأعلى.</p>';
       return;
     }
 
@@ -466,159 +725,6 @@
     }
   });
 
-  // الفترات الممنوعة (Blocked Times)
-  function renderBlockedTimes() {
-    if (!elements.blockedTimesList) return;
-    const constraints = store.getScheduleConstraints();
-    if (constraints.blockedTimes.length === 0) {
-      elements.blockedTimesList.innerHTML = '<span style="font-size:0.8rem; color:var(--color-muted);">لا توجد فترات ممنوعة مضافة حالياً.</span>';
-      return;
-    }
-    elements.blockedTimesList.innerHTML = constraints.blockedTimes.map(b => {
-      const d = store.DAYS.find(day => day.id === b.day)?.name || b.day;
-      return `
-        <div style="display:flex; justify-content:space-between; align-items:center; background:var(--color-bg); padding:4px 8px; border-radius:4px; border:1px solid var(--color-border); font-size:0.8rem;">
-          <span>⛔ ${store.escapeHtml(b.title)} (${d}: ${b.startTime} - ${b.endTime})</span>
-          <button type="button" class="icon-btn" data-action="del-blocked" data-id="${b.id}">✕</button>
-        </div>`;
-    }).join('');
-  }
-
-  elements.blockedTimesList?.addEventListener('click', (e) => {
-    const btn = e.target.closest('[data-action="del-blocked"]');
-    if (btn) {
-      store.deleteBlockedTime(btn.getAttribute('data-id'));
-      renderBlockedTimes();
-    }
-  });
-
-  // فتح نافذة إضافة شعبة (محصّن وذكي)
-  elements.btnOpenAddSection?.addEventListener('click', () => {
-    const courses = store.getCourses();
-
-    if (!courses || courses.length === 0) {
-      alert('تنبيه: يجب إضافة مادة دراسية واحدة على الأقل أولاً لكي تتمكني من ربط الشعبة ومواعيدها بها.');
-      openCourseModal();
-      return;
-    }
-
-    const select = document.getElementById('select-section-course');
-    if (select) {
-      select.innerHTML = courses.map(c => `<option value="${c.id}">${store.escapeHtml(c.name)}</option>`).join('');
-    }
-
-    if (elements.sectionForm) {
-      elements.sectionForm.reset();
-    }
-
-    const cont = document.getElementById('meetings-rows-container');
-    if (cont) {
-      cont.innerHTML = '';
-      addMeetingRow();
-    }
-
-    showModal(elements.sectionModal);
-  });
-
-  function addMeetingRow() {
-    const cont = document.getElementById('meetings-rows-container');
-    if (!cont) return;
-    const idx = cont.children.length;
-    const div = document.createElement('div');
-    div.className = 'meeting-input-row';
-    div.style.cssText = 'background:var(--color-bg); border:1px solid var(--color-border); padding:8px; border-radius:6px; margin-bottom:8px; display:flex; flex-direction:column; gap:6px;';
-    div.innerHTML = `
-      <div style="display:flex; justify-content:space-between; align-items:center;">
-        <span style="font-size:0.8rem; font-weight:bold; color:var(--color-accent);">لقاء (${idx + 1})</span>
-        ${idx > 0 ? `<button type="button" class="btn btn-danger btn-sm" data-action="remove-row" style="padding:2px 6px; font-size:0.75rem;">حذف اللقاء</button>` : ''}
-      </div>
-      <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:6px;">
-        <select class="form-select m-day" required>
-          <option value="sun">الأحد</option>
-          <option value="mon">الإثنين</option>
-          <option value="tue">الثلاثاء</option>
-          <option value="wed">الأربعاء</option>
-          <option value="thu">الخميس</option>
-        </select>
-        <input type="time" class="form-input m-start" value="09:30" required>
-        <input type="time" class="form-input m-end" value="11:00" required>
-      </div>
-      <div style="display:grid; grid-template-columns: 1fr 1fr; gap:6px;">
-        <input type="text" class="form-input m-loc" placeholder="القاعة / المبنى (اختياري)">
-        <select class="form-select m-type">
-          <option value="in_person">وجاهي</option>
-          <option value="online">عن بُعد</option>
-        </select>
-      </div>
-      <label style="font-size:0.8rem; color:var(--color-muted); display:flex; align-items:center; gap:4px; margin-top:2px;">
-        <input type="checkbox" class="m-is-lab"> هذا اللقاء مختبر / عملي إلزامي
-      </label>
-    `;
-
-    const rmBtn = div.querySelector('[data-action="remove-row"]');
-    if (rmBtn) {
-      rmBtn.addEventListener('click', () => div.remove());
-    }
-
-    cont.appendChild(div);
-  }
-
-  document.getElementById('btn-add-meeting-row')?.addEventListener('click', addMeetingRow);
-
-  elements.sectionForm?.addEventListener('submit', (e) => {
-    e.preventDefault();
-    const rows = document.querySelectorAll('.meeting-input-row');
-    const meetings = [];
-    rows.forEach(r => {
-      const day = r.querySelector('.m-day')?.value;
-      const start = r.querySelector('.m-start')?.value;
-      const end = r.querySelector('.m-end')?.value;
-      const loc = r.querySelector('.m-loc')?.value || '';
-      const type = r.querySelector('.m-type')?.value || 'in_person';
-      const isLab = r.querySelector('.m-is-lab')?.checked || false;
-      if (day && start && end) {
-        meetings.push({ day, startTime: start, endTime: end, location: loc, type, isLab });
-      }
-    });
-
-    const res = store.addSection({
-      courseId: document.getElementById('select-section-course')?.value,
-      sectionNumber: document.getElementById('input-section-number')?.value,
-      isPinned: document.getElementById('check-pin-section')?.checked || false,
-      meetings
-    });
-
-    if (!res.success) {
-      alert(res.error);
-      return;
-    }
-    hideModal(elements.sectionModal);
-    renderScheduleSectionsList();
-    renderCourses();
-  });
-
-  // الفترات الممنوعة
-  elements.btnOpenAddBlocked?.addEventListener('click', () => {
-    elements.blockedForm?.reset();
-    showModal(elements.blockedModal);
-  });
-
-  elements.blockedForm?.addEventListener('submit', (e) => {
-    e.preventDefault();
-    const res = store.addBlockedTime({
-      title: document.getElementById('input-blocked-title')?.value,
-      day: document.getElementById('select-blocked-day')?.value,
-      startTime: document.getElementById('input-blocked-start')?.value,
-      endTime: document.getElementById('input-blocked-end')?.value
-    });
-    if (!res.success) {
-      alert(res.error);
-      return;
-    }
-    hideModal(elements.blockedModal);
-    renderBlockedTimes();
-  });
-
   // توليد الجداول
   elements.btnGenerateSchedule?.addEventListener('click', () => {
     const forbidden = [];
@@ -651,11 +757,7 @@
     if (!result.success) {
       if (elements.conflictReportBox) {
         elements.conflictReportBox.style.display = 'block';
-        if (result.technicalLimit) {
-          elements.conflictReportBox.innerHTML = `
-            <h4>⚠️ توقف البحث مؤقتاً</h4>
-            <p style="color:#FECACA; font-size:0.9rem; margin-bottom:8px;">${store.escapeHtml(result.error)}</p>`;
-        } else if (result.noSolution) {
+        if (result.noSolution) {
           elements.conflictReportBox.innerHTML = `
             <h4>⚠ تعذر تكوين جدول متوافق</h4>
             <p style="color:#FECACA; font-size:0.9rem; margin-bottom:8px;">تم رصد التعارضات التالية:</p>
@@ -709,18 +811,6 @@
       `;
     }
 
-    if (elements.scheduleUnmetPreferences) {
-      if (schedule.unmetPreferences.length > 0) {
-        elements.scheduleUnmetPreferences.style.display = 'block';
-        elements.scheduleUnmetPreferences.innerHTML = `
-          <div style="background:rgba(251,191,36,0.1); border:1px solid rgba(251,191,36,0.3); padding:8px 12px; border-radius:6px; font-size:0.85rem; color:#FDE68A;">
-            ${schedule.unmetPreferences.map(u => `<div>⚠️ ${store.escapeHtml(u)}</div>`).join('')}
-          </div>`;
-      } else {
-        elements.scheduleUnmetPreferences.style.display = 'none';
-      }
-    }
-
     const days = store.DAYS;
     let desktopHtml = '<tr>';
     days.forEach(d => {
@@ -770,9 +860,7 @@
           </div>`;
       }
     });
-    if (elements.timetableMobileList) {
-      elements.timetableMobileList.innerHTML = mobileHtml || '<p style="color:var(--color-muted);">لا توجد محاضرات في هذا الجدول.</p>';
-    }
+    if (elements.timetableMobileList) elements.timetableMobileList.innerHTML = mobileHtml;
   }
 
   // حفظ وطباعة الجدول
@@ -799,11 +887,9 @@
     }
   }
 
-  // إضافة وتعديل وحذف مادة
-  function openCourseModal(courseId = null) {
+  // إضافة وحذف مادة
+  function openCourseModal() {
     if (elements.courseForm) elements.courseForm.reset();
-    const checkboxes = elements.courseForm?.querySelectorAll('input[name="course-majors"]');
-    if (checkboxes) checkboxes.forEach(cb => cb.checked = false);
     showModal(elements.courseModal);
   }
 
@@ -811,8 +897,6 @@
 
   elements.courseForm?.addEventListener('submit', (e) => {
     e.preventDefault();
-    const majors = [];
-    elements.courseForm.querySelectorAll('input[name="course-majors"]:checked').forEach(cb => majors.push(cb.value));
     const res = store.addCourse({
       name: document.getElementById('input-course-name')?.value,
       code: document.getElementById('input-course-code')?.value,
@@ -822,8 +906,7 @@
       classification: document.getElementById('select-course-class')?.value,
       description: document.getElementById('input-course-desc')?.value,
       isCurrentSemester: document.getElementById('check-course-current')?.checked,
-      isFavorite: document.getElementById('check-course-favorite')?.checked,
-      majors
+      isFavorite: document.getElementById('check-course-favorite')?.checked
     });
     if (!res.success) { alert(res.error); return; }
     hideModal(elements.courseModal);
@@ -833,9 +916,7 @@
   function confirmDeleteCourse(id) {
     const c = store.getCourse(id);
     if (!c) return;
-    if (elements.deleteMessage) {
-      elements.deleteMessage.textContent = `هل أنت متأكد من حذف مادة "${c.name}"؟ سيتم حذف جميع شُعبها ومصادرها وموضوعاتها نهائياً.`;
-    }
+    elements.deleteMessage.textContent = `هل أنت متأكد من حذف مادة "${c.name}"؟`;
     deleteAction = () => {
       store.deleteCourse(id);
       renderCourses();
@@ -849,7 +930,51 @@
     if (deleteAction) deleteAction();
   });
 
-  // التهيئة العامة للواجهة
+  // فترات ممنوعة
+  elements.btnOpenAddBlocked?.addEventListener('click', () => {
+    elements.blockedForm?.reset();
+    showModal(elements.blockedModal);
+  });
+
+  elements.blockedForm?.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const res = store.addBlockedTime({
+      title: document.getElementById('input-blocked-title')?.value,
+      day: document.getElementById('select-blocked-day')?.value,
+      startTime: document.getElementById('input-blocked-start')?.value,
+      endTime: document.getElementById('input-blocked-end')?.value
+    });
+    if (!res.success) { alert(res.error); return; }
+    hideModal(elements.blockedModal);
+    renderBlockedTimes();
+  });
+
+  function renderBlockedTimes() {
+    if (!elements.blockedTimesList) return;
+    const constraints = store.getScheduleConstraints();
+    if (constraints.blockedTimes.length === 0) {
+      elements.blockedTimesList.innerHTML = '<span style="font-size:0.8rem; color:var(--color-muted);">لا توجد فترات ممنوعة مضافة حالياً.</span>';
+      return;
+    }
+    elements.blockedTimesList.innerHTML = constraints.blockedTimes.map(b => {
+      const d = store.DAYS.find(day => day.id === b.day)?.name || b.day;
+      return `
+        <div style="display:flex; justify-content:space-between; align-items:center; background:var(--color-bg); padding:4px 8px; border-radius:4px; border:1px solid var(--color-border); font-size:0.8rem;">
+          <span>⛔ ${store.escapeHtml(b.title)} (${d}: ${b.startTime} - ${b.endTime})</span>
+          <button type="button" class="icon-btn" data-action="del-blocked" data-id="${b.id}">✕</button>
+        </div>`;
+    }).join('');
+  }
+
+  elements.blockedTimesList?.addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-action="del-blocked"]');
+    if (btn) {
+      store.deleteBlockedTime(btn.getAttribute('data-id'));
+      renderBlockedTimes();
+    }
+  });
+
+  // تهيئة عامة
   renderStudentProfile();
   renderCourses();
   renderScheduleCoursePicker();
