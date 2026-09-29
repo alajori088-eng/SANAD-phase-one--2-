@@ -1,6 +1,6 @@
 /**
- * سند الطالب | SANAD — المحرك البرمجي الموحد والشامل (v4 النهائي المكتمل)
- * تفعيل بحث المواد المباشر، وتثبيت الشعب، ودعم كامل للواجهات
+ * سند الطالب | SANAD — المحرك البرمجي الموحد والشامل (v4 النهائي المحدث)
+ * تفعيل تنبيهات الجداول القديمة، إغلاق القائمة تلقائياً، والتحقق من التواريخ والأوقات
  */
 
 (function () {
@@ -176,8 +176,20 @@
     if (e.key === 'Escape') document.querySelectorAll('.modal-backdrop.is-open').forEach(m => hideModal(m));
   });
 
+  // قائمة الهاتف مع إغلاق تلقائي عند النقر على أي رابط
   if (elements.menuToggle && elements.mainNav) {
     elements.menuToggle.addEventListener('click', () => elements.mainNav.classList.toggle('is-open'));
+    elements.mainNav.querySelectorAll('.nav-link').forEach(link => {
+      link.addEventListener('click', () => {
+        elements.mainNav.classList.remove('is-open');
+      });
+    });
+  }
+
+  function checkSavedScheduleAlert() {
+    if (elements.savedScheduleWarning) {
+      elements.savedScheduleWarning.style.display = store.isSavedScheduleOutdated() ? 'flex' : 'none';
+    }
   }
 
   function renderStudentProfile() {
@@ -217,8 +229,10 @@
     hideModal(elements.profileModal);
   });
 
-  // تفعيل بحث المواد المباشر في قائمة المواد
   elements.courseSearchInput?.addEventListener('input', (e) => {
+    renderCourses(e.target.value);
+  });
+  elements.courseSearchInput?.addEventListener('search', (e) => {
     renderCourses(e.target.value);
   });
 
@@ -467,6 +481,7 @@
       renderCourses();
       renderScheduleSectionsList();
       renderScheduleCoursePicker();
+      checkSavedScheduleAlert();
       renderStudyPlanUI();
       hideModal(elements.deleteModal);
     };
@@ -508,7 +523,6 @@
     renderScheduleSectionsList();
   }
 
-  // إضافة زر الدبوس التفاعلي لتثبيت الشعبة مباشرة
   function renderScheduleSectionsList() {
     if (!elements.sectionsManagerList) return;
     const sections = store.getSections();
@@ -546,9 +560,11 @@
       store.deleteSection(id);
       renderScheduleSectionsList();
       renderScheduleCoursePicker();
+      checkSavedScheduleAlert();
     } else if (act === 'toggle-pin-sec') {
       store.togglePinSection(id);
       renderScheduleSectionsList();
+      checkSavedScheduleAlert();
     }
   });
 
@@ -588,19 +604,32 @@
 
   document.getElementById('btn-add-meeting-row')?.addEventListener('click', addMeetingRow);
 
+  // التحقق من أن وقت النهاية بعد وقت البداية للشعبة
   elements.sectionForm?.addEventListener('submit', (e) => {
     e.preventDefault();
     const rows = document.querySelectorAll('#meetings-rows-container > div');
     const meetings = [];
+    let hasTimeError = false;
+
     rows.forEach(r => {
+      const s = r.querySelector('.m-start').value;
+      const endVal = r.querySelector('.m-end').value;
+      if (endVal <= s) {
+        hasTimeError = true;
+      }
       meetings.push({
         day: r.querySelector('.m-day').value,
-        startTime: r.querySelector('.m-start').value,
-        endTime: r.querySelector('.m-end').value,
+        startTime: s,
+        endTime: endVal,
         type: 'in_person',
         isLab: r.querySelector('.m-is-lab').checked
       });
     });
+
+    if (hasTimeError) {
+      return alert('خطأ: وقت نهاية المحاضرة يجب أن يكون دائماً بعد وقت بدايتها.');
+    }
+
     store.addSection({
       courseId: document.getElementById('select-section-course').value,
       sectionNumber: document.getElementById('input-section-number').value,
@@ -610,6 +639,7 @@
     hideModal(elements.sectionModal);
     renderScheduleSectionsList();
     renderCourses();
+    checkSavedScheduleAlert();
   });
 
   elements.btnOpenAddBlocked?.addEventListener('click', () => {
@@ -619,11 +649,16 @@
 
   elements.formBlockedTime?.addEventListener('submit', (e) => {
     e.preventDefault();
+    const s = document.getElementById('input-blocked-start').value;
+    const endVal = document.getElementById('input-blocked-end').value;
+    if (endVal <= s) {
+      return alert('خطأ: وقت نهاية الالتزام يجب أن يكون بعد وقت بدايته.');
+    }
     store.addBlockedTime({
       title: document.getElementById('input-blocked-title').value,
       day: document.getElementById('select-blocked-day').value,
-      startTime: document.getElementById('input-blocked-start').value,
-      endTime: document.getElementById('input-blocked-end').value
+      startTime: s,
+      endTime: endVal
     });
     hideModal(elements.modalBlockedTime);
     renderBlockedTimes();
@@ -766,7 +801,7 @@
     const cur = currentGeneratedSchedules[currentActiveScheduleIndex];
     if (!cur) return;
     store.saveSelectedSchedule(cur);
-    if (elements.savedScheduleWarning) elements.savedScheduleWarning.style.display = 'none';
+    checkSavedScheduleAlert();
     alert('تم حفظ هذا الجدول بنجاح في متصفحك.');
   });
 
@@ -913,6 +948,7 @@
     renderCourses();
     renderScheduleSectionsList();
     renderScheduleCoursePicker();
+    checkSavedScheduleAlert();
     alert('تم اعتماد واستيراد الشعب بنجاح!');
   });
 
@@ -1143,6 +1179,7 @@
     });
     hideModal(elements.modalStudyTask);
     store.planStudySchedule();
+    renderCourses(); // تحديث المواد فوراً لتوثيق الموضوع الجديد
     renderStudyPlanUI();
   });
 
@@ -1156,11 +1193,19 @@
     showModal(elements.modalStudySettings);
   });
 
+  // التحقق الصارم من أن تاريخ النهاية بعد تاريخ البداية
   elements.formStudySettings?.addEventListener('submit', (e) => {
     e.preventDefault();
+    const startVal = elements.inputStudyStartDate.value;
+    const endVal = elements.inputStudyEndDate.value;
+
+    if (endVal < startVal) {
+      return alert('خطأ: تاريخ نهاية الخطة يجب أن يكون مساوياً أو بعد تاريخ البداية.');
+    }
+
     store.setStudyPlanSettings({
-      startDate: elements.inputStudyStartDate.value,
-      endDate: elements.inputStudyEndDate.value,
+      startDate: startVal,
+      endDate: endVal,
       sessionDuration: parseInt(elements.inputStudySessionLen.value, 10) || 50,
       breakDuration: parseInt(elements.inputStudyBreakLen.value, 10) || 10,
       transitBuffer: parseInt(elements.inputStudyTransitBuffer.value, 10) || 15
@@ -1174,7 +1219,7 @@
     if (!preview.success) return alert(preview.error);
     if (elements.redistributePreviewContent) {
       elements.redistributePreviewContent.innerHTML = `
-        <p style="font-size:0.9rem;">سيتم الاحتفاظ بالمهام المكتملة مسبقاً، وتوزيع ${preview.scheduledCount} جلسة جديدة.</p>
+        <p style="font-size:0.9rem;">سيتم الاحتفاظ بالمهام المكتملة والجزئية مسبقاً، وتوزيع ${preview.scheduledCount} جلسة جديدة.</p>
         ${preview.deficit ? `<div style="background:rgba(248,113,113,0.15); border:1px solid var(--color-danger); padding:8px; border-radius:6px; margin:8px 0; color:#FECACA;">⚠️ عجز قدره ${preview.deficit.totalUnscheduledMinutes} دقيقة.</div>` : ''}
       `;
     }
@@ -1194,6 +1239,7 @@
   renderScheduleSectionsList();
   renderScheduleCoursePicker();
   renderBlockedTimes();
+  checkSavedScheduleAlert();
   renderStudyPlanUI();
 
 })();

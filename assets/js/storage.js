@@ -1,907 +1,1199 @@
 /**
- * سند الطالب | SANAD — وحدة البيانات والتخزين والمحرك المشترك (v4 المستقر والمتكامل)
- * معالجة خصم جلسات المراجعة، فرز أولويات المهام، وتنظيف الجلسات اليتيمة
+ * سند الطالب | SANAD — المحرك البرمجي الموحد والشامل (v4 النهائي المكتمل)
+ * تفعيل بحث المواد المباشر، وتثبيت الشعب، ودعم كامل للواجهات
  */
 
-(function (window) {
+(function () {
   'use strict';
 
-  const STORAGE_KEY = 'sanad_student_data_v4';
-  const OLD_STORAGE_KEYS = ['sanad_student_data_v3', 'sanad_student_data_v2'];
-  const SCHEMA_VERSION = 4;
+  const store = window.SanadStore;
+  if (!store) return;
 
-  const DAYS = [
-    { id: 'sun', name: 'الأحد' },
-    { id: 'mon', name: 'الإثنين' },
-    { id: 'tue', name: 'الثلاثاء' },
-    { id: 'wed', name: 'الأربعاء' },
-    { id: 'thu', name: 'الخميس' },
-    { id: 'fri', name: 'الجمعة' },
-    { id: 'sat', name: 'السبت' }
-  ];
+  store.load();
 
-  const MAJORS = [
-    { id: 'ai_robotics', name: 'الذكاء الاصطناعي والروبوتات' },
-    { id: 'data_science', name: 'علم البيانات والذكاء الاصطناعي' },
-    { id: 'cyber_security', name: 'الأمن السيبراني' },
-    { id: 'software_eng', name: 'هندسة البرمجيات' },
-    { id: 'computer_science', name: 'علم الحاسوب' }
-  ];
+  // عناصر واجهة المستخدم الكاملة
+  const elements = {
+    corruptedBanner: document.getElementById('corrupted-data-banner'),
+    corruptionMsg: document.getElementById('corruption-message'),
+    menuToggle: document.getElementById('menu-toggle'),
+    mainNav: document.getElementById('main-nav'),
+    studentGreeting: document.getElementById('student-greeting'),
+    studentMajorBadge: document.getElementById('student-major-badge'),
+    studentPlanBadge: document.getElementById('student-plan-badge'),
+    editProfileBtn: document.getElementById('btn-edit-profile'),
+    profileModal: document.getElementById('modal-profile'),
+    profileForm: document.getElementById('form-profile'),
 
-  const TOPIC_STATUSES = {
-    not_started: { label: 'لم أبدأ', color: 'muted' },
-    in_progress: { label: 'قيد الدراسة', color: 'primary' },
-    completed: { label: 'مكتمل', color: 'accent' },
-    needs_review: { label: 'بحاجة مراجعة', color: 'warning' }
+    globalSearchInput: document.getElementById('global-search-input'),
+    searchResultsPanel: document.getElementById('search-results-panel'),
+
+    courseSearchInput: document.getElementById('course-search-input'),
+    openAddCourseBtn: document.getElementById('btn-open-add-course'),
+    coursesListView: document.getElementById('courses-list-view'),
+    coursesGrid: document.getElementById('courses-grid'),
+    courseDetailsView: document.getElementById('course-details-view'),
+    backToCoursesBtn: document.getElementById('btn-back-to-courses'),
+    detailCourseName: document.getElementById('detail-course-name'),
+    detailCourseCode: document.getElementById('detail-course-code'),
+    detailCourseHours: document.getElementById('detail-course-hours'),
+    detailCourseClass: document.getElementById('detail-course-class'),
+    detailCourseDesc: document.getElementById('detail-course-desc'),
+    detailTopicsList: document.getElementById('detail-topics-list'),
+    btnOpenAddTopic: document.getElementById('btn-open-add-topic'),
+    courseModal: document.getElementById('modal-course'),
+    courseForm: document.getElementById('form-course'),
+    topicModal: document.getElementById('modal-topic'),
+    formTopic: document.getElementById('form-topic'),
+    resourceModal: document.getElementById('modal-resource'),
+    formResource: document.getElementById('form-resource'),
+    deleteModal: document.getElementById('modal-delete-confirm'),
+    deleteConfirmBtn: document.getElementById('btn-confirm-delete'),
+    deleteMessage: document.getElementById('delete-modal-message'),
+
+    savedScheduleWarning: document.getElementById('saved-schedule-outdated-alert'),
+    coursePickerList: document.getElementById('schedule-course-picker'),
+    sectionsManagerList: document.getElementById('schedule-sections-list'),
+    btnOpenAddSection: document.getElementById('btn-open-add-section'),
+    btnOpenSmartImport: document.getElementById('btn-open-smart-import'),
+    btnGenerateSchedule: document.getElementById('btn-generate-schedule'),
+    scheduleResultsContainer: document.getElementById('schedule-results-container'),
+    scheduleTabsContainer: document.getElementById('schedule-tabs-container'),
+    scheduleMetricsPills: document.getElementById('schedule-metrics-pills'),
+    scheduleUnmetPreferences: document.getElementById('schedule-unmet-preferences'),
+    timetableGridBody: document.getElementById('timetable-grid-body'),
+    timetableMobileList: document.getElementById('timetable-mobile-list'),
+    conflictReportBox: document.getElementById('schedule-conflict-report'),
+    btnSaveSchedule: document.getElementById('btn-save-this-schedule'),
+    btnPrintSchedule: document.getElementById('btn-print-this-schedule'),
+    earliestInput: document.getElementById('constraint-earliest'),
+    latestInput: document.getElementById('constraint-latest'),
+    travelBufferInput: document.getElementById('constraint-travel-buffer'),
+    blockedTimesList: document.getElementById('blocked-times-list'),
+    btnOpenAddBlocked: document.getElementById('btn-open-add-blocked'),
+    modalBlockedTime: document.getElementById('modal-blocked-time'),
+    formBlockedTime: document.getElementById('form-blocked-time'),
+    sectionModal: document.getElementById('modal-section'),
+    sectionForm: document.getElementById('form-section'),
+
+    smartImportModal: document.getElementById('modal-smart-import'),
+    tabBtnPaste: document.getElementById('tab-btn-paste'),
+    tabBtnImage: document.getElementById('tab-btn-image'),
+    importModePaste: document.getElementById('import-mode-paste'),
+    importModeImage: document.getElementById('import-mode-image'),
+    smartPasteTextarea: document.getElementById('smart-paste-textarea'),
+    btnParsePastedText: document.getElementById('btn-parse-pasted-text'),
+    ocrDropzone: document.getElementById('ocr-dropzone'),
+    ocrFileInput: document.getElementById('ocr-file-input'),
+    ocrProgressBox: document.getElementById('ocr-progress-box'),
+    ocrStatusText: document.getElementById('ocr-status-text'),
+    ocrPercentageText: document.getElementById('ocr-percentage-text'),
+    ocrProgressFill: document.getElementById('ocr-progress-fill'),
+    importPreviewSection: document.getElementById('import-preview-section'),
+    parsedCountBadge: document.getElementById('parsed-count-badge'),
+    parsedSectionsContainer: document.getElementById('parsed-sections-container'),
+    btnConfirmSaveImported: document.getElementById('btn-confirm-save-imported'),
+
+    studyPlanScheduleAlert: document.getElementById('study-plan-schedule-alert'),
+    planProgressPctText: document.getElementById('plan-progress-pct-text'),
+    planProgressHoursText: document.getElementById('plan-progress-hours-text'),
+    planProgressBarFill: document.getElementById('plan-progress-bar-fill'),
+    btnOpenAddStudyTask: document.getElementById('btn-open-add-study-task'),
+    btnOpenStudySettings: document.getElementById('btn-open-study-settings'),
+    btnTriggerRedistribute: document.getElementById('btn-trigger-redistribute'),
+    studyPlanDeficitCard: document.getElementById('study-plan-deficit-card'),
+    planTabTodayBtn: document.getElementById('plan-tab-today'),
+    planTabWeekBtn: document.getElementById('plan-tab-week'),
+    planViewTodayContainer: document.getElementById('plan-view-today'),
+    planViewWeekContainer: document.getElementById('plan-view-week'),
+    modalStudyTask: document.getElementById('modal-study-task'),
+    formStudyTask: document.getElementById('form-study-task'),
+    selectStudyTaskCourse: document.getElementById('select-study-task-course'),
+    selectStudyTaskTopic: document.getElementById('select-study-task-topic'),
+    inputStudyTaskNewTopic: document.getElementById('input-study-task-new-topic'),
+    inputStudyTaskMinutes: document.getElementById('input-study-task-minutes'),
+    selectStudyTaskDiff: document.getElementById('select-study-task-diff'),
+    selectStudyTaskPrio: document.getElementById('select-study-task-prio'),
+    selectStudyTaskUnd: document.getElementById('select-study-task-und'),
+    selectStudyTaskWorkType: document.getElementById('select-study-task-worktype'),
+    inputStudyTaskExamDate: document.getElementById('input-study-task-examdate'),
+    inputStudyTaskExamTime: document.getElementById('input-study-task-examtime'),
+    inputStudyTaskReviewMins: document.getElementById('input-study-task-reviewmins'),
+    modalStudySettings: document.getElementById('modal-study-settings'),
+    formStudySettings: document.getElementById('form-study-settings'),
+    inputStudyStartDate: document.getElementById('input-study-start-date'),
+    inputStudyEndDate: document.getElementById('input-study-end-date'),
+    inputStudySessionLen: document.getElementById('input-study-session-len'),
+    inputStudyBreakLen: document.getElementById('input-study-break-len'),
+    inputStudyTransitBuffer: document.getElementById('input-study-transit-buffer'),
+    modalPartialComplete: document.getElementById('modal-partial-complete'),
+    formPartialComplete: document.getElementById('form-partial-complete'),
+    inputPartialMinutes: document.getElementById('input-partial-minutes'),
+    partialSessionDurationMax: document.getElementById('partial-session-duration-max'),
+    modalEditSessionTime: document.getElementById('modal-edit-session-time'),
+    formEditSessionTime: document.getElementById('form-edit-session-time'),
+    inputEditSessionDate: document.getElementById('input-edit-session-date'),
+    inputEditSessionStart: document.getElementById('input-edit-session-start'),
+    inputEditSessionEnd: document.getElementById('input-edit-session-end'),
+    modalRedistributePreview: document.getElementById('modal-redistribute-preview'),
+    redistributePreviewContent: document.getElementById('redistribute-preview-content'),
+    btnConfirmRedistribute: document.getElementById('btn-confirm-redistribute')
   };
 
-  const CLASSIFICATIONS = {
-    univ_req: 'متطلب جامعة',
-    college_req: 'متطلب كلية',
-    major_req: 'متطلب تخصص',
-    elective: 'مادة اختيارية',
-    unspecified: 'غير محدد'
-  };
+  let activePlanView = 'today';
+  let pendingPartialSessionId = null;
+  let pendingEditSessionId = null;
+  let currentViewCourseId = null;
+  let activeTopicForResource = null;
+  let deleteAction = null;
+  let stagedExtractedData = [];
+  let currentGeneratedSchedules = [];
+  let currentActiveScheduleIndex = 0;
 
-  const RESOURCE_TYPES = {
-    explanation: 'شرح',
-    summary: 'ملخص',
-    practical: 'تدريب عملي',
-    reference: 'مرجع',
-    slides: 'سلايدات',
-    questions: 'أسئلة وامتحانات',
-    other: 'أخرى'
-  };
-
-  function formatLocalDate(d) {
-    const year = d.getFullYear();
-    const month = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
+  if (store.isCorrupted() && elements.corruptedBanner && elements.corruptionMsg) {
+    elements.corruptionMsg.textContent = store.getCorruptionDetails() || 'حدث خطأ في تحميل البيانات المحفوظة.';
+    elements.corruptedBanner.style.display = 'flex';
   }
 
-  function parseLocalDate(str) {
-    if (!str || typeof str !== 'string') return new Date();
-    const parts = str.split('-').map(Number);
-    return new Date(parts[0], parts[1] - 1, parts[2], 0, 0, 0, 0);
+  function showModal(m) {
+    if (!m) return;
+    m.classList.add('is-open');
+    const firstInput = m.querySelector('input:not([type="hidden"]), select, textarea');
+    if (firstInput) setTimeout(() => firstInput.focus(), 50);
   }
 
-  function getDayIdFromDate(dateObj) {
-    const map = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
-    return map[dateObj.getDay()];
+  function hideModal(m) {
+    if (!m) return;
+    m.classList.remove('is-open');
   }
 
-  function createDefaultState() {
-    const today = new Date();
-    const defaultEnd = new Date();
-    defaultEnd.setDate(today.getDate() + 14);
+  document.querySelectorAll('.modal-backdrop').forEach(modal => {
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal || e.target.closest('[data-dismiss="modal"]')) hideModal(modal);
+    });
+  });
 
-    return {
-      schemaVersion: SCHEMA_VERSION,
-      student: { firstName: '', majorId: '', planYear: '' },
-      courses: [],
-      topics: [],
-      resources: [],
-      sections: [],
-      scheduleConstraints: {
-        earliestStart: '08:00',
-        latestEnd: '18:00',
-        forbiddenDays: [],
-        travelBuffer: 10,
-        blockedTimes: []
-      },
-      schedulePreferences: {
-        minimizeDays: true,
-        minimizeGaps: true,
-        preferredDayOff: ''
-      },
-      savedSchedule: null,
-      studyPlan: {
-        settings: {
-          startDate: formatLocalDate(today),
-          endDate: formatLocalDate(defaultEnd),
-          sessionDuration: 50,
-          breakDuration: 10,
-          reviewBufferMinutes: 120,
-          transitBuffer: 15,
-          dailyAvailability: {
-            sun: [{ start: '16:00', end: '22:00' }],
-            mon: [{ start: '16:00', end: '22:00' }],
-            tue: [{ start: '16:00', end: '22:00' }],
-            wed: [{ start: '16:00', end: '22:00' }],
-            thu: [{ start: '16:00', end: '22:00' }],
-            fri: [{ start: '10:00', end: '22:00' }],
-            sat: [{ start: '10:00', end: '22:00' }]
-          },
-          customDays: {}
-        },
-        tasks: [],
-        sessions: [],
-        lastGeneratedAt: null,
-        scheduleSavedAtRef: null,
-        lastDeficit: null
-      }
-    };
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') document.querySelectorAll('.modal-backdrop.is-open').forEach(m => hideModal(m));
+  });
+
+  if (elements.menuToggle && elements.mainNav) {
+    elements.menuToggle.addEventListener('click', () => elements.mainNav.classList.toggle('is-open'));
   }
 
-  function generateId(prefix = 'id') {
-    return `${prefix}_${Date.now()}_${Math.random().toString(36).substr(2, 7)}`;
-  }
-
-  function isValidHttpUrl(string) {
-    if (!string || typeof string !== 'string') return false;
-    try {
-      const url = new URL(string.trim());
-      return url.protocol === 'http:' || url.protocol === 'https:';
-    } catch (_) {
-      return false;
+  function renderStudentProfile() {
+    const student = store.getStudent();
+    if (elements.studentGreeting) {
+      elements.studentGreeting.textContent = student.firstName
+        ? `أهلاً بك، ${store.escapeHtml(student.firstName)}`
+        : 'مساحة دراستك في كلية الذكاء الاصطناعي';
+    }
+    if (elements.studentMajorBadge) {
+      const majorObj = store.MAJORS.find(m => m.id === student.majorId);
+      elements.studentMajorBadge.textContent = majorObj ? majorObj.name : '';
+      elements.studentMajorBadge.style.display = majorObj ? 'inline-block' : 'none';
+    }
+    if (elements.studentPlanBadge) {
+      elements.studentPlanBadge.textContent = student.planYear ? `خطة سنة ${store.escapeHtml(student.planYear)}` : '';
+      elements.studentPlanBadge.style.display = student.planYear ? 'inline-block' : 'none';
     }
   }
 
-  function escapeHtml(str) {
-    if (str === null || str === undefined) return '';
-    return String(str)
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&#039;');
-  }
+  elements.editProfileBtn?.addEventListener('click', () => {
+    const s = store.getStudent();
+    document.getElementById('input-student-name').value = s.firstName || '';
+    document.getElementById('select-student-major').value = s.majorId || '';
+    document.getElementById('input-student-year').value = s.planYear || '';
+    showModal(elements.profileModal);
+  });
 
-  function timeToMinutes(timeStr) {
-    if (!timeStr || typeof timeStr !== 'string') return 0;
-    const parts = timeStr.split(':');
-    return (parseInt(parts[0], 10) || 0) * 60 + (parseInt(parts[1], 10) || 0);
-  }
+  elements.profileForm?.addEventListener('submit', (e) => {
+    e.preventDefault();
+    store.setStudent({
+      firstName: document.getElementById('input-student-name').value,
+      majorId: document.getElementById('select-student-major').value,
+      planYear: document.getElementById('input-student-year').value
+    });
+    renderStudentProfile();
+    hideModal(elements.profileModal);
+  });
 
-  function minutesToTime(mins) {
-    const h = Math.floor(mins / 60);
-    const m = mins % 60;
-    return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
-  }
+  // تفعيل بحث المواد المباشر في قائمة المواد
+  elements.courseSearchInput?.addEventListener('input', (e) => {
+    renderCourses(e.target.value);
+  });
 
-  let state = createDefaultState();
-  let isCorrupted = false;
-  let corruptionDetails = null;
-
-  function validateSchema(data) {
-    if (!data || typeof data !== 'object') return false;
-    if (typeof data.schemaVersion !== 'number' || data.schemaVersion < 1) return false;
-    return true;
-  }
-
-  function migrateData(oldData) {
-    const base = createDefaultState();
-    return {
-      ...base,
-      ...oldData,
-      schemaVersion: SCHEMA_VERSION,
-      sections: Array.isArray(oldData.sections) ? oldData.sections : [],
-      scheduleConstraints: { ...base.scheduleConstraints, ...(oldData.scheduleConstraints || {}) },
-      schedulePreferences: { ...base.schedulePreferences, ...(oldData.schedulePreferences || {}) },
-      savedSchedule: oldData.savedSchedule || null,
-      studyPlan: {
-        ...base.studyPlan,
-        ...(oldData.studyPlan || {}),
-        settings: { ...base.studyPlan.settings, ...((oldData.studyPlan && oldData.studyPlan.settings) || {}) },
-        tasks: Array.isArray(oldData.studyPlan?.tasks) ? oldData.studyPlan.tasks : [],
-        sessions: Array.isArray(oldData.studyPlan?.sessions) ? oldData.studyPlan.sessions : []
-      }
-    };
-  }
-
-  function load() {
-    try {
-      let raw = localStorage.getItem(STORAGE_KEY);
-      if (!raw) {
-        for (const oldKey of OLD_STORAGE_KEYS) {
-          const oldRaw = localStorage.getItem(oldKey);
-          if (oldRaw) { raw = oldRaw; break; }
-        }
-      }
-      if (!raw) {
-        state = createDefaultState();
-        isCorrupted = false;
-        return { success: true, isNew: true };
-      }
-      let parsed = JSON.parse(raw);
-      if (!validateSchema(parsed)) {
-        isCorrupted = true;
-        corruptionDetails = 'بنية البيانات السابقة غير متطابقة مع الإصدار الحالي.';
-        return { success: false, corrupted: true };
-      }
-      state = migrateData(parsed);
-      isCorrupted = false;
-      save();
-      return { success: true, data: state };
-    } catch (e) {
-      isCorrupted = true;
-      corruptionDetails = 'تعذر قراءة البيانات المحفوظة في المتصفح.';
-      return { success: false, error: e.message };
-    }
-  }
-
-  function save() {
-    if (isCorrupted) return { success: false, error: 'تم تجميد الحفظ لحماية البيانات من التلف.' };
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-      return { success: true };
-    } catch (err) {
-      return { success: false, error: 'تعذر الحفظ في مساحة التخزين المحلية.' };
-    }
-  }
-
-  // إدارة الطالب والمواد
-  function getStudent() { return { ...state.student }; }
-  function setStudent(data) {
-    state.student = { firstName: (data.firstName || '').trim(), majorId: (data.majorId || '').trim(), planYear: (data.planYear || '').trim() };
-    return save();
-  }
-
-  function getCourses() { return [...state.courses]; }
-  function getCourse(id) { return state.courses.find(c => c.id === id) || null; }
-
-  function addCourse(courseData) {
-    const name = (courseData.name || '').trim();
-    if (!name) return { success: false, error: 'اسم المادة إلزامي.' };
-    const newCourse = {
-      id: generateId('c'),
-      name: name,
-      code: (courseData.code || '').trim().toUpperCase(),
-      hours: parseInt(courseData.hours, 10) || 3,
-      classification: courseData.classification || 'unspecified',
-      isCurrentSemester: Boolean(courseData.isCurrentSemester),
-      createdAt: Date.now(),
-      updatedAt: Date.now()
-    };
-    state.courses.push(newCourse);
-    save();
-    return { success: true, course: newCourse };
-  }
-
-  function deleteCourse(id) {
-    state.courses = state.courses.filter(c => c.id !== id);
-    state.topics = state.topics.filter(t => t.courseId !== id);
-    state.resources = state.resources.filter(r => r.courseId !== id);
-    state.sections = state.sections.filter(s => s.courseId !== id);
-    state.studyPlan.tasks = state.studyPlan.tasks.filter(t => t.courseId !== id);
-    state.studyPlan.sessions = state.studyPlan.sessions.filter(s => s.courseId !== id);
-
-    if (state.savedSchedule && state.savedSchedule.schedule && Array.isArray(state.savedSchedule.schedule.sections)) {
-      const remainingSections = state.savedSchedule.schedule.sections.filter(s => s.courseId !== id);
-      if (remainingSections.length === 0) {
-        state.savedSchedule = null;
-      } else {
-        state.savedSchedule.schedule = evaluateSchedule(remainingSections);
-        state.savedSchedule.savedAt = Date.now();
-      }
-    }
-
-    return save();
-  }
-
-  function getTopicsByCourse(courseId) { return state.topics.filter(t => t.courseId === courseId); }
-  function addTopic(topicData) {
-    const title = (topicData.title || '').trim();
-    if (!title) return { success: false, error: 'عنوان الموضوع إلزامي.' };
-    const newTopic = {
-      id: generateId('t'),
-      courseId: topicData.courseId,
-      title: title,
-      status: topicData.status || 'not_started',
-      createdAt: Date.now(),
-      updatedAt: Date.now()
-    };
-    state.topics.push(newTopic);
-    save();
-    return { success: true, topic: newTopic };
-  }
-
-  function updateTopic(id, topicData) {
-    const topic = state.topics.find(t => t.id === id);
-    if (!topic) return { success: false, error: 'الموضوع غير موجود.' };
-    if (topicData.title !== undefined) topic.title = String(topicData.title).trim();
-    if (topicData.status !== undefined && TOPIC_STATUSES[topicData.status]) topic.status = topicData.status;
-    topic.updatedAt = Date.now();
-    return save();
-  }
-
-  // حذف الموضوع وتنظيف المهام والجلسات المرتبطة به
-  function deleteTopic(id) {
-    const taskIds = state.studyPlan.tasks.filter(t => t.topicId === id).map(t => t.id);
-    state.topics = state.topics.filter(t => t.id !== id);
-    state.resources = state.resources.filter(r => r.topicId !== id);
-    state.studyPlan.tasks = state.studyPlan.tasks.filter(t => t.topicId !== id);
-    state.studyPlan.sessions = state.studyPlan.sessions.filter(s => !taskIds.includes(s.taskId));
-    return save();
-  }
-
-  function getResourcesByTopic(topicId) { return state.resources.filter(r => r.topicId === topicId); }
-  function addResource(resData) {
-    const newRes = { id: generateId('r'), ...resData, createdAt: Date.now() };
-    state.resources.push(newRes);
-    save();
-    return { success: true, resource: newRes };
-  }
-
-  function deleteResource(id) {
-    state.resources = state.resources.filter(r => r.id !== id);
-    return save();
-  }
-
-  // الشعب والجدول الدراسي
-  function getSections() { return [...state.sections]; }
-  function getSectionsByCourse(courseId) { return state.sections.filter(s => s.courseId === courseId); }
-  function addSection(data) {
-    const newSec = {
-      id: generateId('sec'),
-      courseId: data.courseId,
-      sectionNumber: data.sectionNumber,
-      isPinned: Boolean(data.isPinned),
-      meetings: data.meetings,
-      updatedAt: Date.now()
-    };
-    state.sections.push(newSec);
-    save();
-    return { success: true, section: newSec };
-  }
-
-  function deleteSection(id) {
-    state.sections = state.sections.filter(s => s.id !== id);
-    return save();
-  }
-
-  function togglePinSection(id) {
-    const sec = state.sections.find(s => s.id === id);
-    if (!sec) return { success: false, error: 'الشعبة غير موجودة.' };
-    sec.isPinned = !sec.isPinned;
-    sec.updatedAt = Date.now();
-    return save();
-  }
-
-  function getScheduleConstraints() { return JSON.parse(JSON.stringify(state.scheduleConstraints)); }
-  function setScheduleConstraints(data) { state.scheduleConstraints = { ...state.scheduleConstraints, ...data }; return save(); }
-  function addBlockedTime(bData) { state.scheduleConstraints.blockedTimes.push({ id: generateId('blk'), ...bData }); return save(); }
-  function deleteBlockedTime(id) { state.scheduleConstraints.blockedTimes = state.scheduleConstraints.blockedTimes.filter(b => b.id !== id); return save(); }
-
-  function getSavedSchedule() { return state.savedSchedule ? JSON.parse(JSON.stringify(state.savedSchedule)) : null; }
-  function saveSelectedSchedule(scheduleObj) {
-    state.savedSchedule = { id: generateId('sched'), savedAt: Date.now(), schedule: scheduleObj };
-    return save();
-  }
-
-  function isSavedScheduleOutdated() {
-    if (!state.savedSchedule || !state.savedSchedule.schedule) return false;
-    const savedTime = state.savedSchedule.savedAt;
-    return state.sections.some(s => s.updatedAt > savedTime);
-  }
-
-  function generateSchedules(selectedCourseIds) {
-    if (!selectedCourseIds || selectedCourseIds.length === 0) return { success: false, error: 'اختر مادة واحدة على الأقل.' };
-    const constraints = state.scheduleConstraints;
-    const preferences = state.schedulePreferences || { minimizeDays: true, minimizeGaps: true, preferredDayOff: '' };
-    const earliestMin = timeToMinutes(constraints.earliestStart);
-    const latestMin = timeToMinutes(constraints.latestEnd);
-    const coursesPool = [];
-
-    for (const cId of selectedCourseIds) {
-      const course = getCourse(cId);
-      if (!course) continue;
-      let sections = getSectionsByCourse(cId);
-      if (sections.length === 0) return { success: false, error: `المادة "${course.name}" لا تحتوي على أي شعب.` };
-      const pinned = sections.find(s => s.isPinned);
-      coursesPool.push({ course, sections: pinned ? [pinned] : sections });
-    }
-
-    const validSchedules = [];
-    const detectedConflicts = new Set();
-    let iterationCount = 0;
-
-    function backtrack(idx, current) {
-      if (iterationCount++ >= 35000) return;
-      if (idx === coursesPool.length) {
-        validSchedules.push(evaluateSchedule(current, preferences));
+  // البحث الشامل
+  if (elements.globalSearchInput && elements.searchResultsPanel) {
+    elements.globalSearchInput.addEventListener('input', (e) => {
+      const q = e.target.value.trim();
+      if (!q) {
+        elements.searchResultsPanel.style.display = 'none';
         return;
       }
-      const { course, sections } = coursesPool[idx];
-      for (const section of sections) {
-        let valid = true;
-        for (const meeting of section.meetings) {
-          const sMin = timeToMinutes(meeting.startTime);
-          const eMin = timeToMinutes(meeting.endTime);
-
-          if (sMin < earliestMin || eMin > latestMin) {
-            detectedConflicts.add(`مادة "${course.name}" تقع خارج أوقات الدوام المسموح.`);
-            valid = false; break;
-          }
-          if (constraints.forbiddenDays.includes(meeting.day)) {
-            detectedConflicts.add(`مادة "${course.name}" تقع في يوم ممنوع الحضور فيه.`);
-            valid = false; break;
-          }
-
-          for (const blk of constraints.blockedTimes) {
-            if (blk.day === meeting.day) {
-              const bStart = timeToMinutes(blk.startTime);
-              const bEnd = timeToMinutes(blk.endTime);
-              if (Math.max(sMin, bStart) < Math.min(eMin, bEnd)) {
-                detectedConflicts.add(`مادة "${course.name}" تتعارض مع التزام "${blk.title}".`);
-                valid = false; break;
-              }
-            }
-          }
-          if (!valid) break;
-
-          for (const exSec of current) {
-            const exCourse = getCourse(exSec.courseId);
-            for (const exM of exSec.meetings) {
-              if (exM.day === meeting.day) {
-                const exS = timeToMinutes(exM.startTime);
-                const exE = timeToMinutes(exM.endTime);
-                if (Math.max(sMin, exS) < Math.min(eMin, exE)) {
-                  detectedConflicts.add(`تعارض في اليوم (${meeting.day}) بين "${course.name}" و "${exCourse ? exCourse.name : ''}".`);
-                  valid = false; break;
-                }
-                if (constraints.travelBuffer > 0 && meeting.type === 'in_person' && exM.type === 'in_person') {
-                  if ((eMin <= exS && exS < eMin + constraints.travelBuffer) || (exE <= sMin && sMin < exE + constraints.travelBuffer)) {
-                    detectedConflicts.add(`وقت انتقال غير كافٍ بين "${course.name}" و "${exCourse ? exCourse.name : ''}".`);
-                    valid = false; break;
-                  }
-                }
-              }
-            }
-            if (!valid) break;
-          }
-          if (!valid) break;
-        }
-
-        if (valid) {
-          current.push(section);
-          backtrack(idx + 1, current);
-          current.pop();
-        }
+      const results = store.globalSearch(q);
+      if (results.count === 0) {
+        elements.searchResultsPanel.innerHTML = `<div style="padding:1rem; text-align:center; color:var(--color-muted);">لا توجد نتائج تطابق "${store.escapeHtml(q)}"</div>`;
+        elements.searchResultsPanel.style.display = 'block';
+        return;
       }
-    }
-
-    backtrack(0, []);
-    if (validSchedules.length === 0) return { success: false, conflicts: Array.from(detectedConflicts), error: 'تعذر تكوين جدول خالٍ من التعارضات وفق قيودك الحالية.' };
-
-    validSchedules.sort((a, b) => a.penaltyScore - b.penaltyScore);
-    return { success: true, schedules: validSchedules.slice(0, 3) };
-  }
-
-  function evaluateSchedule(sectionsList, preferences = {}) {
-    const dayMap = {};
-    DAYS.forEach(d => { dayMap[d.id] = []; });
-    sectionsList.forEach(sec => {
-      const course = getCourse(sec.courseId);
-      sec.meetings.forEach(m => {
-        dayMap[m.day].push({
-          ...m,
-          courseName: course ? course.name : '',
-          sectionNumber: sec.sectionNumber,
-          startMin: timeToMinutes(m.startTime),
-          endMin: timeToMinutes(m.endTime)
+      let html = '';
+      if (results.courses.length > 0) {
+        html += `<div style="padding:6px 12px; font-size:0.8rem; font-weight:bold; color:var(--color-accent); background:rgba(8,13,24,0.6);">المواد الدراسية</div>`;
+        results.courses.forEach(c => {
+          html += `<div class="search-item" data-action="go-course" data-id="${c.id}" style="padding:8px 12px; cursor:pointer; border-bottom:1px solid var(--color-border); display:flex; justify-content:space-between;">
+            <strong>${store.escapeHtml(c.name)}</strong><span class="tag-badge">عرض</span>
+          </div>`;
         });
-      });
+      }
+      elements.searchResultsPanel.innerHTML = html;
+      elements.searchResultsPanel.style.display = 'block';
     });
 
-    let attendanceDaysCount = 0;
-    const attendanceDayNames = [];
-    let totalGapMinutes = 0;
-    const dailyTimes = {};
-
-    DAYS.forEach(d => {
-      const meets = dayMap[d.id];
-      if (meets.length > 0) {
-        attendanceDaysCount++;
-        attendanceDayNames.push(d.name);
-        meets.sort((a, b) => a.startMin - b.startMin);
-        dailyTimes[d.id] = { start: meets[0].startTime, end: meets[meets.length - 1].endTime };
-        for (let i = 0; i < meets.length - 1; i++) {
-          const gap = meets[i + 1].startMin - meets[i].endMin;
-          if (gap > 0) totalGapMinutes += gap;
-        }
+    elements.searchResultsPanel.addEventListener('click', (e) => {
+      const item = e.target.closest('[data-action="go-course"]');
+      if (item) {
+        openCourseDetails(item.getAttribute('data-id'));
+        elements.searchResultsPanel.style.display = 'none';
+        elements.globalSearchInput.value = '';
       }
     });
-
-    let penaltyScore = 0;
-    if (preferences.minimizeDays) penaltyScore += attendanceDaysCount * 200;
-    if (preferences.minimizeGaps) penaltyScore += totalGapMinutes * 1;
-    if (preferences.preferredDayOff && dayMap[preferences.preferredDayOff]?.length > 0) penaltyScore += 500;
-
-    return {
-      sections: JSON.parse(JSON.stringify(sectionsList)),
-      attendanceDaysCount,
-      attendanceDayNames,
-      totalGapMinutes,
-      dailyTimes,
-      dayMap,
-      penaltyScore
-    };
   }
 
   // -------------------------------------------------------------
-  // محرك خطة الدراسة الحتمي (Study Plan Engine)
+  // إدارة المواد والموضوعات والمصادر
   // -------------------------------------------------------------
 
-  function getStudyPlan() { return JSON.parse(JSON.stringify(state.studyPlan)); }
-  function setStudyPlanSettings(newSettings) { state.studyPlan.settings = { ...state.studyPlan.settings, ...newSettings }; return save(); }
+  function renderCourses(searchFilter = '') {
+    let courses = store.getCourses();
+    if (!elements.coursesGrid) return;
 
-  function addStudyTask(taskData) {
-    const course = getCourse(taskData.courseId);
-    if (!course) return { success: false, error: 'المادة غير موجودة.' };
-    const est = parseInt(taskData.estimatedMinutes, 10) || 60;
-    const newTask = {
-      id: generateId('st'),
-      courseId: taskData.courseId,
-      courseName: course.name,
-      topicId: taskData.topicId || '',
-      topicTitle: taskData.topicTitle,
-      workType: taskData.workType || 'theory',
-      difficulty: taskData.difficulty || 'medium',
-      priority: taskData.priority || 'medium',
-      understandingLevel: taskData.understandingLevel || 'not_started',
-      totalEstimatedMinutes: est,
-      remainingMinutes: est,
-      examDate: taskData.examDate || '',
-      examTime: taskData.examTime || '23:59',
-      reviewMinutesRequired: parseInt(taskData.reviewMinutesRequired, 10) || 0
+    if (searchFilter && searchFilter.trim()) {
+      const filter = searchFilter.trim().toLowerCase();
+      courses = courses.filter(c => c.name.toLowerCase().includes(filter) || (c.code && c.code.toLowerCase().includes(filter)));
+    }
+
+    if (courses.length === 0) {
+      elements.coursesGrid.innerHTML = `
+        <div class="info-card" style="text-align:center; grid-column: 1 / -1; padding:2rem;">
+          <h4 style="color:var(--color-primary); font-size:1.1rem; margin-bottom:4px;">${searchFilter ? 'لا توجد مادة تطابق بحثك' : 'دليلك الدراسي فارغ حالياً'}</h4>
+          <p style="font-size:0.85rem; color:var(--color-muted);">${searchFilter ? 'تأكد من كتابة الاسم أو الرمز بشكل صحيح.' : 'أضف مواد خطتك للبدء بتنظيم الشعب والمصادر واستخدام أدوات الجداول والمذاكرة.'}</p>
+        </div>`;
+      if (!searchFilter) renderScheduleCoursePicker();
+      return;
+    }
+
+    elements.coursesGrid.innerHTML = courses.map(c => {
+      const topics = store.getTopicsByCourse(c.id);
+      const sections = store.getSectionsByCourse(c.id);
+      const completed = topics.filter(t => t.status === 'completed').length;
+      const pct = topics.length > 0 ? Math.round((completed / topics.length) * 100) : 0;
+
+      return `
+        <article class="course-card" data-id="${c.id}">
+          <div>
+            <div class="course-card-top">
+              <span class="course-code">${c.code ? store.escapeHtml(c.code) : 'مادة'}</span>
+              <div style="display:flex; gap:4px;">
+                <button type="button" class="icon-btn" data-action="delete-course" data-id="${c.id}" title="حذف المادة">🗑</button>
+              </div>
+            </div>
+            <h3 class="course-title">${store.escapeHtml(c.name)}</h3>
+            <div class="course-meta">
+              <span class="badge-meta">${c.hours || 3} ساعات</span>
+              <span class="badge-meta" style="color:var(--color-primary);">${sections.length} شُعب متاحة</span>
+            </div>
+            <div style="margin: 8px 0;">
+              <div style="display:flex; justify-content:space-between; font-size:0.8rem; color:var(--color-muted); margin-bottom:4px;">
+                <span>الإنجاز</span><span>${completed} من ${topics.length} موضوعات</span>
+              </div>
+              <div class="progress-bar-bg"><div class="progress-bar-fill" style="width:${pct}%;"></div></div>
+            </div>
+          </div>
+          <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px solid var(--color-border); padding-top:8px; margin-top:8px;">
+            <button type="button" class="btn btn-secondary btn-sm" data-action="view-details" data-id="${c.id}">التفاصيل والمصادر</button>
+          </div>
+        </article>`;
+    }).join('');
+
+    if (!searchFilter) renderScheduleCoursePicker();
+  }
+
+  elements.coursesGrid?.addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-action]');
+    if (!btn) return;
+    const act = btn.getAttribute('data-action');
+    const id = btn.getAttribute('data-id');
+    if (act === 'view-details') openCourseDetails(id);
+    else if (act === 'delete-course') confirmDeleteCourse(id);
+  });
+
+  function openCourseDetails(courseId) {
+    const course = store.getCourse(courseId);
+    if (!course) return;
+    currentViewCourseId = courseId;
+    if (elements.detailCourseName) elements.detailCourseName.textContent = course.name;
+    if (elements.detailCourseCode) elements.detailCourseCode.textContent = course.code || 'بدون رمز';
+    if (elements.detailCourseHours) elements.detailCourseHours.textContent = `${course.hours || 3} ساعات`;
+    if (elements.detailCourseClass) elements.detailCourseClass.textContent = store.CLASSIFICATIONS[course.classification] || 'متطلب';
+    renderCourseTopics(courseId);
+    if (elements.coursesListView) elements.coursesListView.style.display = 'none';
+    if (elements.courseDetailsView) elements.courseDetailsView.style.display = 'block';
+  }
+
+  elements.backToCoursesBtn?.addEventListener('click', () => {
+    if (elements.courseDetailsView) elements.courseDetailsView.style.display = 'none';
+    if (elements.coursesListView) elements.coursesListView.style.display = 'block';
+    currentViewCourseId = null;
+    renderCourses();
+  });
+
+  function renderCourseTopics(courseId) {
+    if (!elements.detailTopicsList) return;
+    const topics = store.getTopicsByCourse(courseId);
+    if (topics.length === 0) {
+      elements.detailTopicsList.innerHTML = `<div class="info-card" style="text-align:center; padding:1.5rem;"><p style="font-size:0.85rem; color:var(--color-muted);">لم يُضف محتوى بعد. اضغط على "+ إضافة موضوع للمادة" للبدء.</p></div>`;
+      return;
+    }
+    elements.detailTopicsList.innerHTML = topics.map(t => {
+      const res = store.getResourcesByTopic(t.id);
+      const statusLabel = t.status === 'completed' ? '✅ مكتمل' : (t.status === 'in_progress' ? '⏳ قيد الدراسة' : '🔘 لم أبدأ');
+      return `
+        <div class="info-card" style="padding:1rem;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; flex-wrap:wrap; gap:8px;">
+            <div style="display:flex; align-items:center; gap:8px;">
+              <strong>${store.escapeHtml(t.title)}</strong>
+              <button type="button" class="btn btn-secondary btn-sm" data-action="cycle-topic-status" data-topic-id="${t.id}" title="اضغط لتبديل حالة الإنجاز">${statusLabel}</button>
+            </div>
+            <div style="display:flex; gap:6px;">
+              <button type="button" class="btn btn-secondary btn-sm" data-action="add-res-to-topic" data-topic-id="${t.id}">+ إضافة مصدر</button>
+              <button type="button" class="icon-btn" data-action="delete-topic" data-topic-id="${t.id}" style="color:var(--color-danger);">🗑</button>
+            </div>
+          </div>
+          <div style="display:flex; flex-direction:column; gap:4px;">
+            ${res.map(r => `<div style="display:flex; justify-content:space-between; font-size:0.85rem; background:var(--color-bg); padding:4px 8px; border-radius:4px; border:1px solid var(--color-border);"><a href="${store.escapeHtml(r.url)}" target="_blank" style="color:var(--color-primary); text-decoration:none;">🔗 ${store.escapeHtml(r.title)}</a><button type="button" class="icon-btn" data-action="del-res" data-id="${r.id}">✕</button></div>`).join('')}
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  elements.detailTopicsList?.addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-action]');
+    if (!btn) return;
+    const act = btn.getAttribute('data-action');
+    if (act === 'delete-topic') {
+      store.deleteTopic(btn.getAttribute('data-topic-id'));
+      renderCourseTopics(currentViewCourseId);
+      renderCourses();
+      renderStudyPlanUI();
+    } else if (act === 'add-res-to-topic') {
+      activeTopicForResource = btn.getAttribute('data-topic-id');
+      elements.formResource?.reset();
+      showModal(elements.resourceModal);
+    } else if (act === 'del-res') {
+      store.deleteResource(btn.getAttribute('data-id'));
+      renderCourseTopics(currentViewCourseId);
+    } else if (act === 'cycle-topic-status') {
+      const tid = btn.getAttribute('data-topic-id');
+      const topic = store.getTopicsByCourse(currentViewCourseId).find(x => x.id === tid);
+      if (topic) {
+        const nextStatus = topic.status === 'not_started' ? 'in_progress' : (topic.status === 'in_progress' ? 'completed' : 'not_started');
+        store.updateTopic(tid, { status: nextStatus });
+        renderCourseTopics(currentViewCourseId);
+        renderCourses();
+      }
+    }
+  });
+
+  elements.btnOpenAddTopic?.addEventListener('click', () => {
+    if (!currentViewCourseId) return;
+    elements.formTopic?.reset();
+    showModal(elements.topicModal);
+  });
+
+  elements.formTopic?.addEventListener('submit', (e) => {
+    e.preventDefault();
+    store.addTopic({
+      courseId: currentViewCourseId,
+      title: document.getElementById('input-topic-title').value,
+      status: document.getElementById('select-topic-status').value
+    });
+    hideModal(elements.topicModal);
+    renderCourseTopics(currentViewCourseId);
+    renderCourses();
+  });
+
+  elements.formResource?.addEventListener('submit', (e) => {
+    e.preventDefault();
+    store.addResource({
+      courseId: currentViewCourseId,
+      topicId: activeTopicForResource,
+      title: document.getElementById('input-resource-title').value,
+      url: document.getElementById('input-resource-url').value,
+      type: document.getElementById('select-resource-type').value
+    });
+    hideModal(elements.resourceModal);
+    renderCourseTopics(currentViewCourseId);
+  });
+
+  elements.openAddCourseBtn?.addEventListener('click', () => {
+    elements.courseForm?.reset();
+    showModal(elements.courseModal);
+  });
+
+  elements.courseForm?.addEventListener('submit', (e) => {
+    e.preventDefault();
+    store.addCourse({
+      name: document.getElementById('input-course-name').value,
+      code: document.getElementById('input-course-code').value,
+      hours: document.getElementById('input-course-hours').value,
+      classification: document.getElementById('select-course-class').value,
+      isCurrentSemester: true
+    });
+    hideModal(elements.courseModal);
+    renderCourses();
+  });
+
+  function confirmDeleteCourse(id) {
+    const c = store.getCourse(id);
+    if (!c) return;
+    elements.deleteMessage.textContent = `هل أنت متأكد من حذف مادة "${c.name}"؟ سيتم حذف جميع شعبها ومصادرها وموضوعاتها نهائياً.`;
+    deleteAction = () => {
+      store.deleteCourse(id);
+      if (currentViewCourseId === id) {
+        if (elements.courseDetailsView) elements.courseDetailsView.style.display = 'none';
+        if (elements.coursesListView) elements.coursesListView.style.display = 'block';
+        currentViewCourseId = null;
+      }
+      renderCourses();
+      renderScheduleSectionsList();
+      renderScheduleCoursePicker();
+      renderStudyPlanUI();
+      hideModal(elements.deleteModal);
     };
-    state.studyPlan.tasks.push(newTask);
-    save();
-    return { success: true, task: newTask };
+    showModal(elements.deleteModal);
   }
 
-  function isStudyPlanScheduleOutdated() {
-    if (!state.studyPlan.lastGeneratedAt || !state.savedSchedule) return false;
-    return state.savedSchedule.savedAt > state.studyPlan.lastGeneratedAt;
+  elements.deleteConfirmBtn?.addEventListener('click', () => {
+    if (deleteAction) deleteAction();
+  });
+
+  // -------------------------------------------------------------
+  // رتّب دوامي: إدارة الشُعب وتوليد الجداول
+  // -------------------------------------------------------------
+
+  function renderScheduleCoursePicker() {
+    if (!elements.coursePickerList) return;
+    const courses = store.getCourses();
+    if (courses.length === 0) {
+      elements.coursePickerList.innerHTML = '<p style="font-size:0.85rem; color:var(--color-muted);">أضف موادك أولاً من قسم تخصصي وموادي للبدء.</p>';
+      return;
+    }
+
+    const previouslyChecked = new Set();
+    document.querySelectorAll('input[name="schedule-course-select"]:checked').forEach(cb => {
+      previouslyChecked.add(cb.value);
+    });
+
+    elements.coursePickerList.innerHTML = courses.map(c => {
+      const isChecked = previouslyChecked.size > 0 ? previouslyChecked.has(c.id) : true;
+      return `
+        <div class="course-pick-row">
+          <label class="course-pick-label">
+            <input type="checkbox" name="schedule-course-select" value="${c.id}" ${isChecked ? 'checked' : ''}>
+            <span>${store.escapeHtml(c.name)} ${c.code ? `(${store.escapeHtml(c.code)})` : ''}</span>
+          </label>
+          <span class="tag-badge">${store.getSectionsByCourse(c.id).length} شُعب</span>
+        </div>`;
+    }).join('');
+    renderScheduleSectionsList();
   }
 
-  function computeAvailableIntervalsForDate(dateStr) {
-    const settings = state.studyPlan.settings;
-    const dateObj = parseLocalDate(dateStr);
-    const dayId = getDayIdFromDate(dateObj);
-    let baseIntervals = settings.dailyAvailability[dayId] || [];
-    let freeWindows = baseIntervals.map(inv => ({ start: timeToMinutes(inv.start), end: timeToMinutes(inv.end) }));
+  // إضافة زر الدبوس التفاعلي لتثبيت الشعبة مباشرة
+  function renderScheduleSectionsList() {
+    if (!elements.sectionsManagerList) return;
+    const sections = store.getSections();
+    if (sections.length === 0) {
+      elements.sectionsManagerList.innerHTML = '<p style="font-size:0.85rem; color:var(--color-muted);">لم تُضف أي شعب بعد. استخدم زر "⚡ استيراد ذكي" أو "+ إضافة يدوية".</p>';
+      return;
+    }
+    elements.sectionsManagerList.innerHTML = sections.map(s => {
+      const c = store.getCourse(s.courseId);
+      const meetStr = s.meetings.map(m => {
+        const d = store.DAYS.find(day => day.id === m.day)?.name || m.day;
+        return `${d} (${m.startTime}-${m.endTime})${m.isLab ? ' [مختبر]' : ''}`;
+      }).join(' • ');
 
-    if (state.savedSchedule && state.savedSchedule.schedule && state.savedSchedule.schedule.dayMap) {
-      const lectures = state.savedSchedule.schedule.dayMap[dayId] || [];
-      const transit = settings.transitBuffer || 15;
-      lectures.forEach(lec => {
-        const busyStart = Math.max(0, lec.startMin - (lec.type === 'in_person' ? transit : 0));
-        const busyEnd = lec.endMin + (lec.type === 'in_person' ? transit : 0);
-        const nextFree = [];
-        freeWindows.forEach(free => {
-          if (busyEnd <= free.start || busyStart >= free.end) nextFree.push(free);
-          else {
-            if (busyStart > free.start) nextFree.push({ start: free.start, end: busyStart });
-            if (busyEnd < free.end) nextFree.push({ start: busyEnd, end: free.end });
-          }
-        });
-        freeWindows = nextFree;
+      return `
+        <div class="section-item-row">
+          <div>
+            <strong>${c ? store.escapeHtml(c.name) : 'مادة'} — شعبة ${store.escapeHtml(s.sectionNumber)}</strong>
+            <button type="button" class="icon-btn" data-action="toggle-pin-sec" data-id="${s.id}" title="${s.isPinned ? 'إلغاء التثبيت' : 'تثبيت الشعبة في الجداول'}">
+              ${s.isPinned ? '<span class="pin-badge">📌 مثبتة</span>' : '📍 تثبيت'}
+            </button>
+            <div style="font-size:0.8rem; color:var(--color-muted); margin-top:2px;">${store.escapeHtml(meetStr)}</div>
+          </div>
+          <button type="button" class="icon-btn" data-action="del-sec" data-id="${s.id}">🗑</button>
+        </div>`;
+    }).join('');
+  }
+
+  elements.sectionsManagerList?.addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-action]');
+    if (!btn) return;
+    const act = btn.getAttribute('data-action');
+    const id = btn.getAttribute('data-id');
+    if (act === 'del-sec') {
+      store.deleteSection(id);
+      renderScheduleSectionsList();
+      renderScheduleCoursePicker();
+    } else if (act === 'toggle-pin-sec') {
+      store.togglePinSection(id);
+      renderScheduleSectionsList();
+    }
+  });
+
+  elements.btnOpenAddSection?.addEventListener('click', () => {
+    const courses = store.getCourses();
+    if (courses.length === 0) {
+      alert('يجب إضافة مادة دراسية أولاً في قسم تخصصي وموادي.');
+      return;
+    }
+    const select = document.getElementById('select-section-course');
+    if (select) select.innerHTML = courses.map(c => `<option value="${c.id}">${store.escapeHtml(c.name)}</option>`).join('');
+    elements.sectionForm?.reset();
+    document.getElementById('meetings-rows-container').innerHTML = '';
+    addMeetingRow();
+    showModal(elements.sectionModal);
+  });
+
+  function addMeetingRow() {
+    const cont = document.getElementById('meetings-rows-container');
+    if (!cont) return;
+    const div = document.createElement('div');
+    div.style.cssText = 'background:var(--color-bg); border:1px solid var(--color-border); padding:8px; border-radius:6px; margin-bottom:8px; display:flex; flex-direction:column; gap:6px;';
+    div.innerHTML = `
+      <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:6px;">
+        <select class="form-select m-day">
+          <option value="sun">الأحد</option><option value="mon">الإثنين</option><option value="tue">الثلاثاء</option><option value="wed">الأربعاء</option><option value="thu">الخميس</option>
+        </select>
+        <input type="time" class="form-input m-start" value="09:30">
+        <input type="time" class="form-input m-end" value="11:00">
+      </div>
+      <label style="font-size:0.8rem; color:var(--color-muted); display:flex; align-items:center; gap:4px;">
+        <input type="checkbox" class="m-is-lab"> هذا اللقاء مختبر
+      </label>
+    `;
+    cont.appendChild(div);
+  }
+
+  document.getElementById('btn-add-meeting-row')?.addEventListener('click', addMeetingRow);
+
+  elements.sectionForm?.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const rows = document.querySelectorAll('#meetings-rows-container > div');
+    const meetings = [];
+    rows.forEach(r => {
+      meetings.push({
+        day: r.querySelector('.m-day').value,
+        startTime: r.querySelector('.m-start').value,
+        endTime: r.querySelector('.m-end').value,
+        type: 'in_person',
+        isLab: r.querySelector('.m-is-lab').checked
       });
-    }
+    });
+    store.addSection({
+      courseId: document.getElementById('select-section-course').value,
+      sectionNumber: document.getElementById('input-section-number').value,
+      isPinned: document.getElementById('check-pin-section').checked,
+      meetings
+    });
+    hideModal(elements.sectionModal);
+    renderScheduleSectionsList();
+    renderCourses();
+  });
 
-    return freeWindows.filter(w => w.end - w.start >= 20);
+  elements.btnOpenAddBlocked?.addEventListener('click', () => {
+    elements.formBlockedTime?.reset();
+    showModal(elements.modalBlockedTime);
+  });
+
+  elements.formBlockedTime?.addEventListener('submit', (e) => {
+    e.preventDefault();
+    store.addBlockedTime({
+      title: document.getElementById('input-blocked-title').value,
+      day: document.getElementById('select-blocked-day').value,
+      startTime: document.getElementById('input-blocked-start').value,
+      endTime: document.getElementById('input-blocked-end').value
+    });
+    hideModal(elements.modalBlockedTime);
+    renderBlockedTimes();
+  });
+
+  function renderBlockedTimes() {
+    if (!elements.blockedTimesList) return;
+    const constraints = store.getScheduleConstraints();
+    elements.blockedTimesList.innerHTML = constraints.blockedTimes.map(b => {
+      const d = store.DAYS.find(day => day.id === b.day)?.name || b.day;
+      return `
+        <div style="display:flex; justify-content:space-between; align-items:center; background:var(--color-bg); padding:4px 8px; border-radius:4px; border:1px solid var(--color-border); font-size:0.8rem;">
+          <span>⛔ ${store.escapeHtml(b.title)} (${d}: ${b.startTime} - ${b.endTime})</span>
+          <button type="button" class="icon-btn" data-action="del-blocked" data-id="${b.id}">✕</button>
+        </div>`;
+    }).join('');
   }
 
-  // خوارزمية التوزيع مع فرز الأولويات ومنع الجدولة في الماضي
-  function planStudySchedule(options = {}) {
-    const isDryRun = Boolean(options.dryRun);
-    const settings = state.studyPlan.settings;
-    const sessionLen = settings.sessionDuration || 50;
-    const breakLen = settings.breakDuration || 10;
+  elements.blockedTimesList?.addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-action="del-blocked"]');
+    if (!btn) return;
+    store.deleteBlockedTime(btn.getAttribute('data-id'));
+    renderBlockedTimes();
+  });
 
-    const todayStr = formatLocalDate(new Date());
-    const effectiveStartStr = settings.startDate < todayStr ? todayStr : settings.startDate;
-    const startObj = parseLocalDate(effectiveStartStr);
-    const endObj = parseLocalDate(settings.endDate);
+  elements.btnGenerateSchedule?.addEventListener('click', () => {
+    const forbidden = [];
+    document.querySelectorAll('input[name="forbidden-days"]:checked').forEach(cb => forbidden.push(cb.value));
 
-    const activeTasks = state.studyPlan.tasks
-      .filter(t => t.remainingMinutes > 0 || t.reviewMinutesRequired > 0)
-      .map(t => ({ ...t }));
-
-    if (activeTasks.length === 0) return { success: false, error: 'لا توجد موضوعات متبقية لجدولتها.' };
-
-    // فرز المهام الصارم: 1. تاريخ الامتحان، 2. الأولوية، 3. الصعوبة، 4. مستوى الفهم
-    const priorityWeight = { high: 3, medium: 2, low: 1 };
-    const diffWeight = { hard: 3, medium: 2, easy: 1 };
-    const undWeight = { not_started: 3, needs_review: 2, mastered: 1 };
-
-    activeTasks.sort((a, b) => {
-      const aDate = a.examDate ? `${a.examDate}T${a.examTime || '23:59'}` : '9999-12-31';
-      const bDate = b.examDate ? `${b.examDate}T${b.examTime || '23:59'}` : '9999-12-31';
-      if (aDate !== bDate) return aDate.localeCompare(bDate);
-
-      const pDiff = (priorityWeight[b.priority] || 1) - (priorityWeight[a.priority] || 1);
-      if (pDiff !== 0) return pDiff;
-
-      const dDiff = (diffWeight[b.difficulty] || 1) - (diffWeight[a.difficulty] || 1);
-      if (dDiff !== 0) return dDiff;
-
-      return (undWeight[b.understandingLevel] || 1) - (undWeight[a.understandingLevel] || 1);
+    store.setScheduleConstraints({
+      earliestStart: elements.earliestInput?.value || '08:00',
+      latestEnd: elements.latestInput?.value || '18:00',
+      travelBuffer: parseInt(elements.travelBufferInput?.value, 10) || 0,
+      forbiddenDays: forbidden,
+      blockedTimes: store.getScheduleConstraints().blockedTimes
     });
 
-    const dateRangeList = [];
-    let curObj = new Date(startObj);
-    while (curObj <= endObj) {
-      dateRangeList.push(formatLocalDate(curObj));
-      curObj.setDate(curObj.getDate() + 1);
+    const selectedCourseIds = [];
+    document.querySelectorAll('input[name="schedule-course-select"]:checked').forEach(cb => selectedCourseIds.push(cb.value));
+
+    elements.conflictReportBox.style.display = 'none';
+    elements.scheduleResultsContainer.style.display = 'none';
+
+    const result = store.generateSchedules(selectedCourseIds);
+    if (!result.success) {
+      elements.conflictReportBox.style.display = 'block';
+      elements.conflictReportBox.innerHTML = `<h4>⚠️ تنبيه بالتعارض</h4><p style="color:#FECACA; font-size:0.9rem;">${store.escapeHtml(result.error)}</p>${result.conflicts ? `<ul class="conflict-list" style="margin-top:6px;">${result.conflicts.map(c => `<li>${store.escapeHtml(c)}</li>`).join('')}</ul>` : ''}`;
+      return;
     }
 
-    const dailyAvailableMap = {};
-    dateRangeList.forEach(dStr => { dailyAvailableMap[dStr] = computeAvailableIntervalsForDate(dStr); });
+    currentGeneratedSchedules = result.schedules;
+    currentActiveScheduleIndex = 0;
+    renderScheduleTabs();
+    elements.scheduleResultsContainer.style.display = 'block';
+    elements.scheduleResultsContainer.scrollIntoView({ behavior: 'smooth' });
+  });
 
-    const preservedSessions = state.studyPlan.sessions.filter(s => s.status === 'completed' || s.status === 'partial');
-    
-    preservedSessions.forEach(ps => {
-      if (dailyAvailableMap[ps.date]) {
-        const psStart = timeToMinutes(ps.startTime);
-        const psEnd = timeToMinutes(ps.endTime);
-        const nextFree = [];
-        dailyAvailableMap[ps.date].forEach(w => {
-          if (psEnd <= w.start || psStart >= w.end) {
-            nextFree.push(w);
-          } else {
-            if (psStart > w.start) nextFree.push({ start: w.start, end: psStart });
-            if (psEnd < w.end) nextFree.push({ start: psEnd, end: w.end });
-          }
+  function renderScheduleTabs() {
+    if (!elements.scheduleTabsContainer) return;
+    elements.scheduleTabsContainer.innerHTML = currentGeneratedSchedules.map((s, idx) => `
+      <button type="button" class="tab-btn ${idx === currentActiveScheduleIndex ? 'active' : ''}" data-idx="${idx}">
+        الجدول (${idx + 1}) ${idx === 0 ? '★ الأنسب' : ''}
+      </button>
+    `).join('');
+    renderActiveSchedule(currentGeneratedSchedules[currentActiveScheduleIndex]);
+  }
+
+  elements.scheduleTabsContainer?.addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-idx]');
+    if (!btn) return;
+    currentActiveScheduleIndex = parseInt(btn.getAttribute('data-idx'), 10);
+    renderScheduleTabs();
+  });
+
+  function renderActiveSchedule(schedule) {
+    if (!schedule) return;
+    const daysStr = schedule.attendanceDayNames.join('، ');
+    const hoursGap = (schedule.totalGapMinutes / 60).toFixed(1);
+    if (elements.scheduleMetricsPills) {
+      elements.scheduleMetricsPills.innerHTML = `
+        <div class="metric-pill">📅 <strong>أيام الدوام:</strong> ${schedule.attendanceDaysCount} أيام (${store.escapeHtml(daysStr)})</div>
+        <div class="metric-pill">⏳ <strong>مجموع الفراغات:</strong> ${schedule.totalGapMinutes} دقيقة (${hoursGap} ساعة)</div>
+      `;
+    }
+
+    const days = store.DAYS.slice(0, 5);
+
+    let desktopHtml = '<tr>';
+    days.forEach(d => {
+      const meetings = schedule.dayMap[d.id] || [];
+      const times = schedule.dailyTimes[d.id];
+      const timeHeader = times ? `<br><small style="color:var(--color-muted); font-size:0.75rem;">${times.start} - ${times.end}</small>` : '<br><small style="color:var(--color-muted); font-size:0.75rem;">إجازة</small>';
+
+      desktopHtml += `
+        <td>
+          <div style="font-weight:bold; margin-bottom:8px; border-bottom:1px solid var(--color-border); padding-bottom:4px;">
+            ${d.name} ${timeHeader}
+          </div>
+          <div>
+            ${meetings.map(m => `
+              <div class="meeting-block ${m.isLab ? 'is-lab' : ''}">
+                <div class="meeting-title">${store.escapeHtml(m.courseName)}</div>
+                <div class="meeting-time">${m.startTime} - ${m.endTime} (شعبة ${store.escapeHtml(m.sectionNumber)})</div>
+              </div>
+            `).join('')}
+          </div>
+        </td>`;
+    });
+    desktopHtml += '</tr>';
+    if (elements.timetableGridBody) elements.timetableGridBody.innerHTML = desktopHtml;
+
+    if (elements.timetableMobileList) {
+      let mobileHtml = '';
+      days.forEach(d => {
+        const meetings = schedule.dayMap[d.id] || [];
+        if (meetings.length > 0) {
+          const times = schedule.dailyTimes[d.id];
+          mobileHtml += `
+            <div class="day-agenda-card">
+              <div style="display:flex; justify-content:space-between; font-weight:bold; border-bottom:1px solid var(--color-border); padding-bottom:6px; margin-bottom:8px;">
+                <span style="color:var(--color-accent);">${d.name}</span>
+                <span style="font-family:var(--font-code); color:var(--color-primary);">${times.start} - ${times.end}</span>
+              </div>
+              <div style="display:flex; flex-direction:column; gap:6px;">
+                ${meetings.map(m => `
+                  <div class="meeting-block ${m.isLab ? 'is-lab' : ''}">
+                    <div class="meeting-title">${store.escapeHtml(m.courseName)} — شعبة ${store.escapeHtml(m.sectionNumber)}</div>
+                    <div class="meeting-time">${m.startTime} - ${m.endTime}${m.isLab ? '• [مختبر]' : ''}</div>
+                  </div>
+                `).join('')}
+              </div>
+            </div>`;
+        }
+      });
+      elements.timetableMobileList.innerHTML = mobileHtml || '<p style="color:var(--color-muted); text-align:center; padding:1rem;">لا توجد محاضرات مجدولة.</p>';
+    }
+  }
+
+  elements.btnSaveSchedule?.addEventListener('click', () => {
+    const cur = currentGeneratedSchedules[currentActiveScheduleIndex];
+    if (!cur) return;
+    store.saveSelectedSchedule(cur);
+    if (elements.savedScheduleWarning) elements.savedScheduleWarning.style.display = 'none';
+    alert('تم حفظ هذا الجدول بنجاح في متصفحك.');
+  });
+
+  elements.btnPrintSchedule?.addEventListener('click', () => window.print());
+
+  // -------------------------------------------------------------
+  // الاستيراد الذكي (لصق / OCR)
+  // -------------------------------------------------------------
+
+  elements.btnOpenSmartImport?.addEventListener('click', () => {
+    stagedExtractedData = [];
+    if (elements.importPreviewSection) elements.importPreviewSection.style.display = 'none';
+    if (elements.btnConfirmSaveImported) elements.btnConfirmSaveImported.style.display = 'none';
+    if (elements.smartPasteTextarea) elements.smartPasteTextarea.value = '';
+    showModal(elements.smartImportModal);
+  });
+
+  elements.tabBtnPaste?.addEventListener('click', () => {
+    elements.tabBtnPaste.classList.add('active');
+    elements.tabBtnImage.classList.remove('active');
+    elements.importModePaste.style.display = 'block';
+    elements.importModeImage.style.display = 'none';
+  });
+
+  elements.tabBtnImage?.addEventListener('click', () => {
+    elements.tabBtnImage.classList.add('active');
+    elements.tabBtnPaste.classList.remove('active');
+    elements.importModeImage.style.display = 'block';
+    elements.importModePaste.style.display = 'none';
+  });
+
+  function parseTextLines(text) {
+    const lines = text.split('\n');
+    const parsed = [];
+    lines.forEach((line, idx) => {
+      const timeMatch = line.match(/(\d{1,2})[:.](\d{2})\s*(?:-|–|إلى|to)\s*(\d{1,2})[:.](\d{2})/i);
+      if (timeMatch) {
+        let sH = parseInt(timeMatch[1], 10), sM = timeMatch[2], eH = parseInt(timeMatch[3], 10), eM = timeMatch[4];
+        if (sH >= 1 && sH <= 7) sH += 12;
+        if (eH >= 1 && eH <= 7) eH += 12;
+
+        const days = /ح\s*ث\s*خ/i.test(line) ? ['sun', 'tue', 'thu'] : (/ن\s*ر/i.test(line) ? ['mon', 'wed'] : ['sun', 'tue', 'thu']);
+
+        const beforeTime = line.split(timeMatch[0])[0].trim();
+        const words = beforeTime.split(/\s+/).filter(w => {
+          const isDayToken = /^(ح|ث|خ|ن|ر|الأحد|الاحد|الإثنين|الاثنين|الثلاثاء|الأربعاء|الاربعاء|الخميس)$/i.test(w.trim());
+          const isNumeric = /^\d+$/.test(w.trim());
+          return !isDayToken && !isNumeric;
         });
-        dailyAvailableMap[ps.date] = nextFree;
+
+        const courseName = words.slice(0, 4).join(' ').trim() || `مادة (${idx + 1})`;
+
+        parsed.push({
+          courseName: courseName,
+          sectionNumber: '1',
+          meetings: days.map(d => ({
+            day: d,
+            startTime: `${String(sH).padStart(2,'0')}:${sM}`,
+            endTime: `${String(eH).padStart(2,'0')}:${eM}`,
+            type: 'in_person',
+            isLab: /مختبر|عملي|lab/i.test(line)
+          }))
+        });
       }
     });
+    return parsed;
+  }
 
-    const newScheduledSessions = [];
-    const affectedTasksDeficit = [];
-    let totalUnscheduledMinutes = 0;
+  elements.btnParsePastedText?.addEventListener('click', () => {
+    const text = elements.smartPasteTextarea.value.trim();
+    if (!text) return alert('الرجاء لصق نص الجدول أولاً.');
+    const parsed = parseTextLines(text);
 
-    // 1. جدولة جلسات المراجعة
-    activeTasks.forEach(task => {
-      if (task.reviewMinutesRequired > 0 && task.examDate) {
-        let revNeeded = task.reviewMinutesRequired;
-        const examDateStr = task.examDate;
-        const examEndMin = timeToMinutes(task.examTime || '23:59');
-        const candidateDates = dateRangeList.filter(d => d <= examDateStr).reverse();
+    if (parsed.length === 0) return alert('لم يتم العثور على أوقات مثل (09:30 - 11:00) في النص.');
+    stagedExtractedData = parsed;
+    elements.importPreviewSection.style.display = 'block';
+    elements.btnConfirmSaveImported.style.display = 'inline-flex';
+    elements.parsedCountBadge.textContent = `${parsed.length} شعبة`;
+    elements.parsedSectionsContainer.innerHTML = parsed.map(p => `
+      <div style="background:var(--color-bg); padding:6px 10px; border-radius:4px; border:1px solid var(--color-border); font-size:0.85rem;">
+        <strong>${store.escapeHtml(p.courseName)}</strong> (${p.meetings[0].startTime} - ${p.meetings[0].endTime})
+      </div>`).join('');
+  });
 
-        for (const cDate of candidateDates) {
-          if (revNeeded <= 0) break;
-          const windows = dailyAvailableMap[cDate] || [];
-          for (let wi = windows.length - 1; wi >= 0; wi--) {
-            if (revNeeded <= 0) break;
-            const win = windows[wi];
-            while (revNeeded > 0) {
-              let usableEnd = win.end;
-              if (cDate === examDateStr && usableEnd > examEndMin) usableEnd = examEndMin;
-              if (usableEnd - win.start < 20) break;
+  elements.ocrDropzone?.addEventListener('click', () => elements.ocrFileInput?.click());
 
-              const availLen = usableEnd - win.start;
-              const sessLen = Math.min(revNeeded, sessionLen, availLen);
-              const sessStart = usableEnd - sessLen;
+  elements.ocrFileInput?.addEventListener('change', async (e) => {
+    if (!e.target.files || !e.target.files[0]) return;
+    const file = e.target.files[0];
 
-              newScheduledSessions.push({
-                id: generateId('sess'),
-                taskId: task.id,
-                courseId: task.courseId,
-                courseName: task.courseName,
-                topicTitle: task.topicTitle,
-                workType: task.workType,
-                isReview: true,
-                date: cDate,
-                startTime: minutesToTime(sessStart),
-                endTime: minutesToTime(usableEnd),
-                durationMinutes: sessLen,
-                status: 'pending',
-                completedMinutes: 0
-              });
+    if (!window.Tesseract) {
+      return alert('محرك القراءة غير متصل. استخدمي خيار "📋 لصق نص الجدول" فهو فوري وأدق بنسبة 100%.');
+    }
 
-              revNeeded -= sessLen;
-              win.end = Math.max(win.start, sessStart - breakLen);
-            }
+    elements.ocrProgressBox.style.display = 'block';
+    elements.ocrStatusText.textContent = 'جارٍ مسح أوقات المحاضرات ضوئياً...';
+    elements.ocrPercentageText.textContent = '10%';
+    elements.ocrProgressFill.style.width = '10%';
+
+    try {
+      const result = await window.Tesseract.recognize(file, 'ara+eng', {
+        logger: m => {
+          if (m.status === 'recognizing text') {
+            const p = Math.round((m.progress || 0) * 100);
+            elements.ocrPercentageText.textContent = `${p}%`;
+            elements.ocrProgressFill.style.width = `${p}%`;
           }
         }
-        if (revNeeded > 0) {
-          totalUnscheduledMinutes += revNeeded;
-          affectedTasksDeficit.push({ taskTitle: `${task.courseName}: مراجعة ${task.topicTitle}`, unscheduledMinutes: revNeeded });
-        }
+      });
+
+      const parsed = parseTextLines(result.data.text || '');
+      if (parsed.length === 0) {
+        alert('تم مسح الصورة ولكن خط الجدول غير واضح. يفضل نسخ النص بالفأرة ولصقه في تبويب "لصق نص الجدول".');
+        return;
       }
+
+      stagedExtractedData = parsed;
+      elements.importPreviewSection.style.display = 'block';
+      elements.btnConfirmSaveImported.style.display = 'inline-flex';
+      elements.parsedCountBadge.textContent = `${parsed.length} شعبة`;
+      elements.parsedSectionsContainer.innerHTML = parsed.map(p => `
+        <div style="background:var(--color-bg); padding:6px 10px; border-radius:4px; border:1px solid var(--color-border); font-size:0.85rem;">
+          <strong>${store.escapeHtml(p.courseName)}</strong> (${p.meetings[0].startTime} - ${p.meetings[0].endTime})
+        </div>`).join('');
+
+    } catch (err) {
+      alert('حدث خطأ أثناء فحص الصورة. يمكنك نسخ النص ولصقه مباشرة.');
+    } finally {
+      elements.ocrProgressBox.style.display = 'none';
+    }
+  });
+
+  elements.btnConfirmSaveImported?.addEventListener('click', () => {
+    stagedExtractedData.forEach(item => {
+      let c = store.getCourses().find(course => course.name.toLowerCase() === item.courseName.toLowerCase());
+      let cId = c ? c.id : null;
+      if (!c) {
+        const added = store.addCourse({ name: item.courseName, hours: 3, isCurrentSemester: true });
+        if (added.success) cId = added.course.id;
+      }
+      if (cId) store.addSection({ courseId: cId, sectionNumber: item.sectionNumber, meetings: item.meetings });
+    });
+    hideModal(elements.smartImportModal);
+    renderCourses();
+    renderScheduleSectionsList();
+    renderScheduleCoursePicker();
+    alert('تم اعتماد واستيراد الشعب بنجاح!');
+  });
+
+  // -------------------------------------------------------------
+  // خطة الدراسة والمذاكرة (المرحلة 4)
+  // -------------------------------------------------------------
+
+  function renderStudyPlanUI() {
+    if (elements.studyPlanScheduleAlert) {
+      elements.studyPlanScheduleAlert.style.display = store.isStudyPlanScheduleOutdated() ? 'flex' : 'none';
+    }
+    renderStudyStats();
+    renderDeficitCard();
+    if (activePlanView === 'today') renderTodayView();
+    else renderWeekView();
+  }
+
+  function renderStudyStats() {
+    const stats = store.getStudyProgressStats();
+    if (elements.planProgressPctText) elements.planProgressPctText.textContent = `${stats.percentage}%`;
+    if (elements.planProgressBarFill) elements.planProgressBarFill.style.width = `${stats.percentage}%`;
+    if (elements.planProgressHoursText) {
+      const compH = (stats.completedMinutes / 60).toFixed(1);
+      const totalH = (stats.totalNeededMinutes / 60).toFixed(1);
+      elements.planProgressHoursText.textContent = `${compH} من ${totalH} ساعة مكتملة (${stats.tasksCount} مهمة)`;
+    }
+  }
+
+  function renderDeficitCard() {
+    if (!elements.studyPlanDeficitCard) return;
+    const plan = store.getStudyPlan();
+    const deficit = plan.lastDeficit;
+    if (!deficit || deficit.totalUnscheduledMinutes <= 0) {
+      elements.studyPlanDeficitCard.style.display = 'none';
+      return;
+    }
+    const unH = (deficit.totalUnscheduledMinutes / 60).toFixed(1);
+    elements.studyPlanDeficitCard.style.display = 'block';
+    elements.studyPlanDeficitCard.innerHTML = `
+      <h4>⚠️ عجز في الوقت المتاح للدراسة (${deficit.totalUnscheduledMinutes} دقيقة • ${unH} ساعة)</h4>
+      <p style="font-size:0.85rem;">لم تكفِ فترات فراغك لتغطية كامل المهام قبل الامتحانات:</p>
+      <ul style="list-style:disc; padding-right:20px; font-size:0.85rem; margin-top:4px;">
+        ${deficit.affectedTasks.map(t => `<li><strong>${store.escapeHtml(t.taskTitle)}:</strong> تبقى ${t.unscheduledMinutes} دقيقة.</li>`).join('')}
+      </ul>`;
+  }
+
+  elements.planTabTodayBtn?.addEventListener('click', () => {
+    activePlanView = 'today';
+    elements.planTabTodayBtn.classList.add('active');
+    elements.planTabWeekBtn.classList.remove('active');
+    elements.planViewTodayContainer.style.display = 'block';
+    elements.planViewWeekContainer.style.display = 'none';
+    renderTodayView();
+  });
+
+  elements.planTabWeekBtn?.addEventListener('click', () => {
+    activePlanView = 'week';
+    elements.planTabWeekBtn.classList.add('active');
+    elements.planTabTodayBtn.classList.remove('active');
+    elements.planViewTodayContainer.style.display = 'none';
+    elements.planViewWeekContainer.style.display = 'block';
+    renderWeekView();
+  });
+
+  function renderTodayView() {
+    if (!elements.planViewTodayContainer) return;
+    const todayStr = store.formatLocalDate(new Date());
+    const plan = store.getStudyPlan();
+    const todaySessions = plan.sessions.filter(s => s.date === todayStr);
+
+    if (todaySessions.length === 0) {
+      elements.planViewTodayContainer.innerHTML = `
+        <div class="info-card" style="text-align:center; padding:1.5rem;">
+          <h4 style="color:var(--color-accent); font-size:1.1rem;">لا توجد جلسات دراسية مجدولة لليوم 🎉</h4>
+        </div>`;
+      return;
+    }
+    elements.planViewTodayContainer.innerHTML = todaySessions.map(sess => renderSessionCardHtml(sess)).join('');
+  }
+
+  function renderWeekView() {
+    if (!elements.planViewWeekContainer) return;
+    const plan = store.getStudyPlan();
+    if (plan.sessions.length === 0) {
+      elements.planViewWeekContainer.innerHTML = `
+        <div class="info-card" style="text-align:center; padding:1.5rem;">
+          <h4 style="color:var(--color-primary); font-size:1.1rem;">الخطة الدراسية فارغة حالياً</h4>
+        </div>`;
+      return;
+    }
+    const groups = {};
+    plan.sessions.forEach(s => {
+      if (!groups[s.date]) groups[s.date] = [];
+      groups[s.date].push(s);
     });
 
-    // 2. جدولة الجلسات العادية
-    activeTasks.forEach(task => {
-      let needed = task.remainingMinutes;
-      const examDateStr = task.examDate || '9999-12-31';
-      const examEndMin = timeToMinutes(task.examTime || '23:59');
+    elements.planViewWeekContainer.innerHTML = Object.keys(groups).sort().map(dStr => {
+      const dObj = store.parseLocalDate(dStr);
+      const dayId = store.getDayIdFromDate(dObj);
+      const dayName = store.DAYS.find(d => d.id === dayId)?.name || '';
+      return `
+        <div class="agenda-day-group">
+          <div class="agenda-date-heading">📅 ${dayName} (${dStr}) — ${groups[dStr].length} جلسات</div>
+          <div>${groups[dStr].map(s => renderSessionCardHtml(s)).join('')}</div>
+        </div>`;
+    }).join('');
+  }
 
-      for (const dStr of dateRangeList) {
-        if (needed <= 0 || dStr > examDateStr) break;
-        const windows = dailyAvailableMap[dStr] || [];
+  function renderSessionCardHtml(sess) {
+    const isCompleted = sess.status === 'completed';
+    return `
+      <div class="study-task-card ${sess.isReview ? 'is-review' : ''} ${isCompleted ? 'is-completed' : ''}">
+        <div class="study-task-info">
+          <div class="study-task-title">
+            ${store.escapeHtml(sess.courseName)}: ${store.escapeHtml(sess.topicTitle)}
+            ${sess.isReview ? '<span class="badge-review">🎯 مراجعة للامتحان</span>' : ''}
+          </div>
+          <div class="study-task-badges">
+            <span style="font-family:var(--font-code); color:var(--color-primary);">🕒 ${sess.startTime} - ${sess.endTime} (${sess.durationMinutes} دقيقة)</span>
+            <span class="badge-worktype">${sess.workType === 'practical' ? '💻 عملي' : '📖 نظري'}</span>
+            ${isCompleted ? '<span style="color:var(--color-accent); font-weight:bold;">✔ مكتملة</span>' : ''}
+          </div>
+        </div>
+        <div class="study-task-actions">
+          ${!isCompleted ? `
+            <button type="button" class="btn btn-accent btn-sm" data-action="complete-sess" data-id="${sess.id}">✔ أنجزت</button>
+            <button type="button" class="btn btn-secondary btn-sm" data-action="partial-sess" data-id="${sess.id}">⏱ جزء منها</button>
+            <button type="button" class="btn btn-secondary btn-sm" data-action="edit-time-sess" data-id="${sess.id}">✎ التوقيت</button>
+            <button type="button" class="btn btn-danger btn-sm" data-action="postpone-sess" data-id="${sess.id}">تأجيل</button>
+          ` : '<span style="font-size:0.8rem; color:var(--color-muted);">تم الإنجاز</span>'}
+        </div>
+      </div>`;
+  }
 
-        for (let wi = 0; wi < windows.length; wi++) {
-          if (needed <= 0) break;
-          const win = windows[wi];
-          let usableEnd = win.end;
-          if (dStr === examDateStr && usableEnd > examEndMin) usableEnd = examEndMin;
+  document.addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-action]');
+    if (!btn) return;
+    const act = btn.getAttribute('data-action');
+    const id = btn.getAttribute('data-id');
 
-          while (win.start + 20 <= usableEnd && needed > 0) {
-            const availLen = usableEnd - win.start;
-            const sessLen = Math.min(needed, sessionLen, availLen);
-            const sessStart = win.start;
-            const sessEnd = sessStart + sessLen;
+    if (act === 'complete-sess') {
+      store.markSessionComplete(id);
+      renderStudyPlanUI();
+    } else if (act === 'partial-sess') {
+      const sess = store.getStudyPlan().sessions.find(s => s.id === id);
+      if (!sess) return;
+      pendingPartialSessionId = id;
+      if (elements.partialSessionDurationMax) elements.partialSessionDurationMax.textContent = sess.durationMinutes;
+      if (elements.inputPartialMinutes) elements.inputPartialMinutes.value = Math.round(sess.durationMinutes / 2);
+      showModal(elements.modalPartialComplete);
+    } else if (act === 'edit-time-sess') {
+      const sess = store.getStudyPlan().sessions.find(s => s.id === id);
+      if (!sess) return;
+      pendingEditSessionId = id;
+      if (elements.inputEditSessionDate) elements.inputEditSessionDate.value = sess.date;
+      if (elements.inputEditSessionStart) elements.inputEditSessionStart.value = sess.startTime;
+      if (elements.inputEditSessionEnd) elements.inputEditSessionEnd.value = sess.endTime;
+      showModal(elements.modalEditSessionTime);
+    } else if (act === 'postpone-sess') {
+      store.postponeSession(id);
+      renderStudyPlanUI();
+    }
+  });
 
-            newScheduledSessions.push({
-              id: generateId('sess'),
-              taskId: task.id,
-              courseId: task.courseId,
-              courseName: task.courseName,
-              topicTitle: task.topicTitle,
-              workType: task.workType,
-              isReview: false,
-              date: dStr,
-              startTime: minutesToTime(sessStart),
-              endTime: minutesToTime(sessEnd),
-              durationMinutes: sessLen,
-              status: 'pending',
-              completedMinutes: 0
-            });
+  elements.formPartialComplete?.addEventListener('submit', (e) => {
+    e.preventDefault();
+    if (!pendingPartialSessionId) return;
+    store.markSessionComplete(pendingPartialSessionId, parseInt(elements.inputPartialMinutes.value, 10));
+    hideModal(elements.modalPartialComplete);
+    renderStudyPlanUI();
+  });
 
-            needed -= sessLen;
-            win.start = sessEnd + breakLen;
-          }
-        }
-      }
-      if (needed > 0) {
-        totalUnscheduledMinutes += needed;
-        affectedTasksDeficit.push({ taskTitle: `${task.courseName}: ${task.topicTitle}`, unscheduledMinutes: needed });
-      }
+  elements.formEditSessionTime?.addEventListener('submit', (e) => {
+    e.preventDefault();
+    if (!pendingEditSessionId) return;
+    const date = elements.inputEditSessionDate.value;
+    const start = elements.inputEditSessionStart.value;
+    const end = elements.inputEditSessionEnd.value;
+
+    const res = store.editSessionTime(pendingEditSessionId, date, start, end);
+    if (!res.success) {
+      alert(res.error);
+      return;
+    }
+    hideModal(elements.modalEditSessionTime);
+    renderStudyPlanUI();
+  });
+
+  elements.btnOpenAddStudyTask?.addEventListener('click', () => {
+    const courses = store.getCourses();
+    if (courses.length === 0) return alert('أضف مادة في قسم تخصصي وموادي أولاً.');
+    if (elements.selectStudyTaskCourse) {
+      elements.selectStudyTaskCourse.innerHTML = courses.map(c => `<option value="${c.id}">${store.escapeHtml(c.name)}</option>`).join('');
+      updateTopicsDropdown(courses[0].id);
+    }
+    elements.formStudyTask?.reset();
+    showModal(elements.modalStudyTask);
+  });
+
+  elements.selectStudyTaskCourse?.addEventListener('change', (e) => updateTopicsDropdown(e.target.value));
+
+  function updateTopicsDropdown(courseId) {
+    if (!elements.selectStudyTaskTopic) return;
+    const topics = store.getTopicsByCourse(courseId);
+    elements.selectStudyTaskTopic.innerHTML = '<option value="">-- أو اختر موضوعاً مسجلاً --</option>' +
+      topics.map(t => `<option value="${t.id}" data-title="${store.escapeHtml(t.title)}">${store.escapeHtml(t.title)}</option>`).join('');
+  }
+
+  elements.selectStudyTaskTopic?.addEventListener('change', (e) => {
+    const sel = e.target.options[e.target.selectedIndex];
+    if (sel && sel.getAttribute('data-title')) elements.inputStudyTaskNewTopic.value = sel.getAttribute('data-title');
+  });
+
+  elements.formStudyTask?.addEventListener('submit', (e) => {
+    e.preventDefault();
+    store.addStudyTask({
+      courseId: elements.selectStudyTaskCourse.value,
+      topicId: elements.selectStudyTaskTopic.value,
+      topicTitle: elements.inputStudyTaskNewTopic.value.trim(),
+      estimatedMinutes: parseInt(elements.inputStudyTaskMinutes.value, 10),
+      difficulty: elements.selectStudyTaskDiff.value,
+      priority: elements.selectStudyTaskPrio.value,
+      understandingLevel: elements.selectStudyTaskUnd.value,
+      workType: elements.selectStudyTaskWorkType.value,
+      examDate: elements.inputStudyTaskExamDate.value,
+      examTime: elements.inputStudyTaskExamTime.value,
+      reviewMinutesRequired: parseInt(elements.inputStudyTaskReviewMins.value, 10) || 0
     });
+    hideModal(elements.modalStudyTask);
+    store.planStudySchedule();
+    renderStudyPlanUI();
+  });
 
-    const deficitReport = totalUnscheduledMinutes > 0 ? { totalUnscheduledMinutes, affectedTasks: affectedTasksDeficit } : null;
+  elements.btnOpenStudySettings?.addEventListener('click', () => {
+    const s = store.getStudyPlan().settings;
+    if (elements.inputStudyStartDate) elements.inputStudyStartDate.value = s.startDate;
+    if (elements.inputStudyEndDate) elements.inputStudyEndDate.value = s.endDate;
+    if (elements.inputStudySessionLen) elements.inputStudySessionLen.value = s.sessionDuration;
+    if (elements.inputStudyBreakLen) elements.inputStudyBreakLen.value = s.breakDuration;
+    if (elements.inputStudyTransitBuffer) elements.inputStudyTransitBuffer.value = s.transitBuffer;
+    showModal(elements.modalStudySettings);
+  });
 
-    if (isDryRun) {
-      return { success: true, previewSessions: newScheduledSessions, deficit: deficitReport, scheduledCount: newScheduledSessions.length };
-    }
-
-    state.studyPlan.sessions = [...preservedSessions, ...newScheduledSessions];
-    state.studyPlan.lastGeneratedAt = Date.now();
-    state.studyPlan.lastDeficit = deficitReport;
-    save();
-
-    return { success: true, sessions: state.studyPlan.sessions, deficit: deficitReport };
-  }
-
-  // حل خصم جلسات المراجعة من رصيد المراجعة الصحيح
-  function markSessionComplete(sessionId, completedMinutes = null) {
-    const sess = state.studyPlan.sessions.find(s => s.id === sessionId);
-    if (!sess) return { success: false };
-    const task = state.studyPlan.tasks.find(t => t.id === sess.taskId);
-    const full = sess.durationMinutes;
-    const prevCompleted = sess.completedMinutes || 0;
-
-    let newlyDeducted = 0;
-    if (completedMinutes === null || completedMinutes >= full) {
-      sess.status = 'completed';
-      sess.completedMinutes = full;
-      newlyDeducted = full - prevCompleted;
-    } else {
-      const comp = Math.max(0, parseInt(completedMinutes, 10) || 0);
-      sess.status = comp > 0 ? 'partial' : 'pending';
-      sess.completedMinutes = comp;
-      newlyDeducted = comp - prevCompleted;
-    }
-
-    if (task && newlyDeducted > 0) {
-      if (sess.isReview) {
-        task.reviewMinutesRequired = Math.max(0, (task.reviewMinutesRequired || 0) - newlyDeducted);
-      } else {
-        task.remainingMinutes = Math.max(0, task.remainingMinutes - newlyDeducted);
-      }
-      task.updatedAt = Date.now();
-    }
-
-    return save();
-  }
-
-  function postponeSession(sessionId) {
-    const sessIndex = state.studyPlan.sessions.findIndex(s => s.id === sessionId);
-    if (sessIndex === -1) return { success: false };
-    const sess = state.studyPlan.sessions[sessIndex];
-    const task = state.studyPlan.tasks.find(t => t.id === sess.taskId);
-
-    if (task && sess.status === 'partial') {
-      const uncompleted = sess.durationMinutes - (sess.completedMinutes || 0);
-      if (sess.isReview) {
-        task.reviewMinutesRequired = (task.reviewMinutesRequired || 0) + uncompleted;
-      } else {
-        task.remainingMinutes += uncompleted;
-      }
-      task.updatedAt = Date.now();
-    }
-    state.studyPlan.sessions.splice(sessIndex, 1);
-    return save();
-  }
-
-  function editSessionTime(sessionId, newDate, newStart, newEnd) {
-    const sess = state.studyPlan.sessions.find(s => s.id === sessionId);
-    if (!sess) return { success: false, error: 'الجلسة غير موجودة.' };
-
-    const task = state.studyPlan.tasks.find(t => t.id === sess.taskId);
-    const sMin = timeToMinutes(newStart);
-    const eMin = timeToMinutes(newEnd);
-
-    if (eMin <= sMin) return { success: false, error: 'وقت النهاية يجب أن يكون بعد وقت البداية.' };
-
-    if (task && task.examDate) {
-      if (newDate > task.examDate || (newDate === task.examDate && eMin > timeToMinutes(task.examTime || '23:59'))) {
-        return { success: false, error: 'لا يمكن تحديد موعد الجلسة بعد موعد الامتحان المحدد.' };
-      }
-    }
-
-    const dayId = getDayIdFromDate(parseLocalDate(newDate));
-    if (state.savedSchedule && state.savedSchedule.schedule && state.savedSchedule.schedule.dayMap) {
-      const lectures = state.savedSchedule.schedule.dayMap[dayId] || [];
-      for (const lec of lectures) {
-        if (Math.max(sMin, lec.startMin) < Math.min(eMin, lec.endMin)) {
-          return { success: false, error: `يتعارض هذا التوقيت مع محاضرة "${lec.courseName}".` };
-        }
-      }
-    }
-
-    for (const other of state.studyPlan.sessions) {
-      if (other.id !== sessionId && other.date === newDate) {
-        const oS = timeToMinutes(other.startTime);
-        const oE = timeToMinutes(other.endTime);
-        if (Math.max(sMin, oS) < Math.min(eMin, oE)) {
-          return { success: false, error: `يتعارض هذا التوقيت مع جلسة مذاكرة أخرى: "${other.topicTitle}" (${other.startTime} - ${other.endTime}).` };
-        }
-      }
-    }
-
-    sess.date = newDate;
-    sess.startTime = newStart;
-    sess.endTime = newEnd;
-    sess.durationMinutes = eMin - sMin;
-    return save();
-  }
-
-  // احتساب وقت المراجعة في إجمالي الدقائق المطلوبة
-  function getStudyProgressStats() {
-    let totalNeededMinutes = 0;
-    let completedMinutes = 0;
-    state.studyPlan.tasks.forEach(t => {
-      totalNeededMinutes += (t.totalEstimatedMinutes + (t.reviewMinutesRequired || 0));
+  elements.formStudySettings?.addEventListener('submit', (e) => {
+    e.preventDefault();
+    store.setStudyPlanSettings({
+      startDate: elements.inputStudyStartDate.value,
+      endDate: elements.inputStudyEndDate.value,
+      sessionDuration: parseInt(elements.inputStudySessionLen.value, 10) || 50,
+      breakDuration: parseInt(elements.inputStudyBreakLen.value, 10) || 10,
+      transitBuffer: parseInt(elements.inputStudyTransitBuffer.value, 10) || 15
     });
-    state.studyPlan.sessions.forEach(s => {
-      if (s.status === 'completed') completedMinutes += s.durationMinutes;
-      else if (s.status === 'partial') completedMinutes += s.completedMinutes || 0;
-    });
-    const pct = totalNeededMinutes > 0 ? Math.min(100, Math.round((completedMinutes / totalNeededMinutes) * 100)) : 0;
-    return { totalNeededMinutes, completedMinutes, percentage: pct, tasksCount: state.studyPlan.tasks.length };
-  }
+    hideModal(elements.modalStudySettings);
+    alert('تم حفظ الإعدادات بنجاح.');
+  });
 
-  function globalSearch(query) {
-    const q = (query || '').trim().toLowerCase();
-    if (!q) return { courses: [], count: 0 };
-    const courses = state.courses.filter(c => c.name.toLowerCase().includes(q) || (c.code && c.code.toLowerCase().includes(q)));
-    return { courses, count: courses.length };
-  }
+  elements.btnTriggerRedistribute?.addEventListener('click', () => {
+    const preview = store.planStudySchedule({ dryRun: true });
+    if (!preview.success) return alert(preview.error);
+    if (elements.redistributePreviewContent) {
+      elements.redistributePreviewContent.innerHTML = `
+        <p style="font-size:0.9rem;">سيتم الاحتفاظ بالمهام المكتملة مسبقاً، وتوزيع ${preview.scheduledCount} جلسة جديدة.</p>
+        ${preview.deficit ? `<div style="background:rgba(248,113,113,0.15); border:1px solid var(--color-danger); padding:8px; border-radius:6px; margin:8px 0; color:#FECACA;">⚠️ عجز قدره ${preview.deficit.totalUnscheduledMinutes} دقيقة.</div>` : ''}
+      `;
+    }
+    showModal(elements.modalRedistributePreview);
+  });
 
-  window.SanadStore = {
-    load, save,
-    isCorrupted: () => isCorrupted,
-    getCorruptionDetails: () => corruptionDetails,
-    DAYS, MAJORS, TOPIC_STATUSES, CLASSIFICATIONS, RESOURCE_TYPES,
-    formatLocalDate, parseLocalDate, getDayIdFromDate, escapeHtml,
-    getStudent, setStudent,
-    getCourses, getCourse, addCourse, deleteCourse,
-    getTopicsByCourse, addTopic, updateTopic, deleteTopic,
-    getResourcesByTopic, addResource, deleteResource,
-    getSections, getSectionsByCourse, addSection, deleteSection, togglePinSection,
-    getScheduleConstraints, setScheduleConstraints, addBlockedTime, deleteBlockedTime,
-    getSavedSchedule, saveSelectedSchedule, isSavedScheduleOutdated, generateSchedules,
-    getStudyPlan, setStudyPlanSettings, addStudyTask, planStudySchedule,
-    markSessionComplete, postponeSession, editSessionTime,
-    getStudyProgressStats, isStudyPlanScheduleOutdated,
-    globalSearch
-  };
+  elements.btnConfirmRedistribute?.addEventListener('click', () => {
+    store.planStudySchedule();
+    hideModal(elements.modalRedistributePreview);
+    renderStudyPlanUI();
+    alert('تمت إعادة توزيع الخطة بنجاح!');
+  });
 
-})(window);
+  // التهيئة الأولية الكاملة
+  renderStudentProfile();
+  renderCourses();
+  renderScheduleSectionsList();
+  renderScheduleCoursePicker();
+  renderBlockedTimes();
+  renderStudyPlanUI();
+
+})();
