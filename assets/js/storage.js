@@ -1,6 +1,6 @@
 /**
- * سند الطالب | SANAD — وحدة البيانات والتخزين والمحرك المشترك (v4 المستقر)
- * معالجة الجدولة المستقبلية، الحفاظ على الإنجاز الجزئي، والمفاضلة الذكية للجداول
+ * سند الطالب | SANAD — وحدة البيانات والتخزين والمحرك المشترك (v4 المستقر والمتكامل)
+ * معالجة خصم جلسات المراجعة، فرز أولويات المهام، وتنظيف الجلسات اليتيمة
  */
 
 (function (window) {
@@ -267,7 +267,6 @@
     state.studyPlan.tasks = state.studyPlan.tasks.filter(t => t.courseId !== id);
     state.studyPlan.sessions = state.studyPlan.sessions.filter(s => s.courseId !== id);
 
-    // تنظيف الجدول المحفوظ فوراً من شُعب هذه المادة
     if (state.savedSchedule && state.savedSchedule.schedule && Array.isArray(state.savedSchedule.schedule.sections)) {
       const remainingSections = state.savedSchedule.schedule.sections.filter(s => s.courseId !== id);
       if (remainingSections.length === 0) {
@@ -307,10 +306,13 @@
     return save();
   }
 
+  // حذف الموضوع وتنظيف المهام والجلسات المرتبطة به
   function deleteTopic(id) {
+    const taskIds = state.studyPlan.tasks.filter(t => t.topicId === id).map(t => t.id);
     state.topics = state.topics.filter(t => t.id !== id);
     state.resources = state.resources.filter(r => r.topicId !== id);
     state.studyPlan.tasks = state.studyPlan.tasks.filter(t => t.topicId !== id);
+    state.studyPlan.sessions = state.studyPlan.sessions.filter(s => !taskIds.includes(s.taskId));
     return save();
   }
 
@@ -349,6 +351,14 @@
     return save();
   }
 
+  function togglePinSection(id) {
+    const sec = state.sections.find(s => s.id === id);
+    if (!sec) return { success: false, error: 'الشعبة غير موجودة.' };
+    sec.isPinned = !sec.isPinned;
+    sec.updatedAt = Date.now();
+    return save();
+  }
+
   function getScheduleConstraints() { return JSON.parse(JSON.stringify(state.scheduleConstraints)); }
   function setScheduleConstraints(data) { state.scheduleConstraints = { ...state.scheduleConstraints, ...data }; return save(); }
   function addBlockedTime(bData) { state.scheduleConstraints.blockedTimes.push({ id: generateId('blk'), ...bData }); return save(); }
@@ -366,7 +376,6 @@
     return state.sections.some(s => s.updatedAt > savedTime);
   }
 
-  // محرك توليد الجداول مع خوارزمية الترتيب والمفاضلة الذكية
   function generateSchedules(selectedCourseIds) {
     if (!selectedCourseIds || selectedCourseIds.length === 0) return { success: false, error: 'اختر مادة واحدة على الأقل.' };
     const constraints = state.scheduleConstraints;
@@ -402,7 +411,7 @@
           const eMin = timeToMinutes(meeting.endTime);
 
           if (sMin < earliestMin || eMin > latestMin) {
-            detectedConflicts.add(`مادة "${course.name}" تقع خارج حدود وقت الدوام المسموح.`);
+            detectedConflicts.add(`مادة "${course.name}" تقع خارج أوقات الدوام المسموح.`);
             valid = false; break;
           }
           if (constraints.forbiddenDays.includes(meeting.day)) {
@@ -410,7 +419,6 @@
             valid = false; break;
           }
 
-          // فحص الفترات الممنوعة (Blocked Times)
           for (const blk of constraints.blockedTimes) {
             if (blk.day === meeting.day) {
               const bStart = timeToMinutes(blk.startTime);
@@ -423,7 +431,6 @@
           }
           if (!valid) break;
 
-          // فحص التعارض ووقت الانتقال
           for (const exSec of current) {
             const exCourse = getCourse(exSec.courseId);
             for (const exM of exSec.meetings) {
@@ -458,7 +465,6 @@
     backtrack(0, []);
     if (validSchedules.length === 0) return { success: false, conflicts: Array.from(detectedConflicts), error: 'تعذر تكوين جدول خالٍ من التعارضات وفق قيودك الحالية.' };
 
-    // ترتيب الجداول وفق الأفضلية (الأقل فراغات والأقل أيام حضور أولاً)
     validSchedules.sort((a, b) => a.penaltyScore - b.penaltyScore);
     return { success: true, schedules: validSchedules.slice(0, 3) };
   }
@@ -498,7 +504,6 @@
       }
     });
 
-    // حساب نقاط الجزاء لاختيار أفضل جدول (★ الأنسب)
     let penaltyScore = 0;
     if (preferences.minimizeDays) penaltyScore += attendanceDaysCount * 200;
     if (preferences.minimizeGaps) penaltyScore += totalGapMinutes * 1;
@@ -580,13 +585,13 @@
     return freeWindows.filter(w => w.end - w.start >= 20);
   }
 
+  // خوارزمية التوزيع مع فرز الأولويات ومنع الجدولة في الماضي
   function planStudySchedule(options = {}) {
     const isDryRun = Boolean(options.dryRun);
     const settings = state.studyPlan.settings;
     const sessionLen = settings.sessionDuration || 50;
     const breakLen = settings.breakDuration || 10;
 
-    // منع الجدولة في الماضي: نبدأ من اليوم أو تاريخ البداية أيهما أحدث
     const todayStr = formatLocalDate(new Date());
     const effectiveStartStr = settings.startDate < todayStr ? todayStr : settings.startDate;
     const startObj = parseLocalDate(effectiveStartStr);
@@ -598,6 +603,25 @@
 
     if (activeTasks.length === 0) return { success: false, error: 'لا توجد موضوعات متبقية لجدولتها.' };
 
+    // فرز المهام الصارم: 1. تاريخ الامتحان، 2. الأولوية، 3. الصعوبة، 4. مستوى الفهم
+    const priorityWeight = { high: 3, medium: 2, low: 1 };
+    const diffWeight = { hard: 3, medium: 2, easy: 1 };
+    const undWeight = { not_started: 3, needs_review: 2, mastered: 1 };
+
+    activeTasks.sort((a, b) => {
+      const aDate = a.examDate ? `${a.examDate}T${a.examTime || '23:59'}` : '9999-12-31';
+      const bDate = b.examDate ? `${b.examDate}T${b.examTime || '23:59'}` : '9999-12-31';
+      if (aDate !== bDate) return aDate.localeCompare(bDate);
+
+      const pDiff = (priorityWeight[b.priority] || 1) - (priorityWeight[a.priority] || 1);
+      if (pDiff !== 0) return pDiff;
+
+      const dDiff = (diffWeight[b.difficulty] || 1) - (diffWeight[a.difficulty] || 1);
+      if (dDiff !== 0) return dDiff;
+
+      return (undWeight[b.understandingLevel] || 1) - (undWeight[a.understandingLevel] || 1);
+    });
+
     const dateRangeList = [];
     let curObj = new Date(startObj);
     while (curObj <= endObj) {
@@ -608,10 +632,8 @@
     const dailyAvailableMap = {};
     dateRangeList.forEach(dStr => { dailyAvailableMap[dStr] = computeAvailableIntervalsForDate(dStr); });
 
-    // الحفاظ التام على الجلسات المكتملة والجزئية
     const preservedSessions = state.studyPlan.sessions.filter(s => s.status === 'completed' || s.status === 'partial');
     
-    // حجز أوقات الجلسات المحفوظة لمنع الجدولة فوقها
     preservedSessions.forEach(ps => {
       if (dailyAvailableMap[ps.date]) {
         const psStart = timeToMinutes(ps.startTime);
@@ -668,7 +690,8 @@
                 startTime: minutesToTime(sessStart),
                 endTime: minutesToTime(usableEnd),
                 durationMinutes: sessLen,
-                status: 'pending'
+                status: 'pending',
+                completedMinutes: 0
               });
 
               revNeeded -= sessLen;
@@ -717,7 +740,8 @@
               startTime: minutesToTime(sessStart),
               endTime: minutesToTime(sessEnd),
               durationMinutes: sessLen,
-              status: 'pending'
+              status: 'pending',
+              completedMinutes: 0
             });
 
             needed -= sessLen;
@@ -745,7 +769,7 @@
     return { success: true, sessions: state.studyPlan.sessions, deficit: deficitReport };
   }
 
-  // خصم الفرق الفعلي فقط
+  // حل خصم جلسات المراجعة من رصيد المراجعة الصحيح
   function markSessionComplete(sessionId, completedMinutes = null) {
     const sess = state.studyPlan.sessions.find(s => s.id === sessionId);
     if (!sess) return { success: false };
@@ -753,22 +777,27 @@
     const full = sess.durationMinutes;
     const prevCompleted = sess.completedMinutes || 0;
 
+    let newlyDeducted = 0;
     if (completedMinutes === null || completedMinutes >= full) {
       sess.status = 'completed';
       sess.completedMinutes = full;
-      const newlyDeducted = full - prevCompleted;
-      if (task && newlyDeducted > 0) {
-        task.remainingMinutes = Math.max(0, task.remainingMinutes - newlyDeducted);
-      }
+      newlyDeducted = full - prevCompleted;
     } else {
       const comp = Math.max(0, parseInt(completedMinutes, 10) || 0);
       sess.status = comp > 0 ? 'partial' : 'pending';
       sess.completedMinutes = comp;
-      const newlyDeducted = comp - prevCompleted;
-      if (task && newlyDeducted > 0) {
+      newlyDeducted = comp - prevCompleted;
+    }
+
+    if (task && newlyDeducted > 0) {
+      if (sess.isReview) {
+        task.reviewMinutesRequired = Math.max(0, (task.reviewMinutesRequired || 0) - newlyDeducted);
+      } else {
         task.remainingMinutes = Math.max(0, task.remainingMinutes - newlyDeducted);
       }
+      task.updatedAt = Date.now();
     }
+
     return save();
   }
 
@@ -780,7 +809,12 @@
 
     if (task && sess.status === 'partial') {
       const uncompleted = sess.durationMinutes - (sess.completedMinutes || 0);
-      task.remainingMinutes += uncompleted;
+      if (sess.isReview) {
+        task.reviewMinutesRequired = (task.reviewMinutesRequired || 0) + uncompleted;
+      } else {
+        task.remainingMinutes += uncompleted;
+      }
+      task.updatedAt = Date.now();
     }
     state.studyPlan.sessions.splice(sessIndex, 1);
     return save();
@@ -829,10 +863,13 @@
     return save();
   }
 
+  // احتساب وقت المراجعة في إجمالي الدقائق المطلوبة
   function getStudyProgressStats() {
     let totalNeededMinutes = 0;
     let completedMinutes = 0;
-    state.studyPlan.tasks.forEach(t => { totalNeededMinutes += t.totalEstimatedMinutes; });
+    state.studyPlan.tasks.forEach(t => {
+      totalNeededMinutes += (t.totalEstimatedMinutes + (t.reviewMinutesRequired || 0));
+    });
     state.studyPlan.sessions.forEach(s => {
       if (s.status === 'completed') completedMinutes += s.durationMinutes;
       else if (s.status === 'partial') completedMinutes += s.completedMinutes || 0;
@@ -848,7 +885,6 @@
     return { courses, count: courses.length };
   }
 
-  // تصدير واجهة الدوال كاملة مع دالة updateTopic
   window.SanadStore = {
     load, save,
     isCorrupted: () => isCorrupted,
@@ -857,9 +893,9 @@
     formatLocalDate, parseLocalDate, getDayIdFromDate, escapeHtml,
     getStudent, setStudent,
     getCourses, getCourse, addCourse, deleteCourse,
-    getTopicsByCourse, addTopic, updateTopic, deleteTopic, // <-- updateTopic مصدرة هنا
+    getTopicsByCourse, addTopic, updateTopic, deleteTopic,
     getResourcesByTopic, addResource, deleteResource,
-    getSections, getSectionsByCourse, addSection, deleteSection,
+    getSections, getSectionsByCourse, addSection, deleteSection, togglePinSection,
     getScheduleConstraints, setScheduleConstraints, addBlockedTime, deleteBlockedTime,
     getSavedSchedule, saveSelectedSchedule, isSavedScheduleOutdated, generateSchedules,
     getStudyPlan, setStudyPlanSettings, addStudyTask, planStudySchedule,

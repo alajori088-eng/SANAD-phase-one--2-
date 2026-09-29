@@ -1,6 +1,6 @@
 /**
- * سند الطالب | SANAD — المحرك البرمجي الموحد والشامل (v4 النهائي)
- * معالجة تفاعلية للموضوعات، حفظ مربعات الاختيار، وإغلاق تفاصيل المواد المحذوفة
+ * سند الطالب | SANAD — المحرك البرمجي الموحد والشامل (v4 النهائي المكتمل)
+ * تفعيل بحث المواد المباشر، وتثبيت الشعب، ودعم كامل للواجهات
  */
 
 (function () {
@@ -149,7 +149,6 @@
   let currentGeneratedSchedules = [];
   let currentActiveScheduleIndex = 0;
 
-  // فحص تنبيه تلف البيانات
   if (store.isCorrupted() && elements.corruptedBanner && elements.corruptionMsg) {
     elements.corruptionMsg.textContent = store.getCorruptionDetails() || 'حدث خطأ في تحميل البيانات المحفوظة.';
     elements.corruptedBanner.style.display = 'flex';
@@ -218,6 +217,12 @@
     hideModal(elements.profileModal);
   });
 
+  // تفعيل بحث المواد المباشر في قائمة المواد
+  elements.courseSearchInput?.addEventListener('input', (e) => {
+    renderCourses(e.target.value);
+  });
+
+  // البحث الشامل
   if (elements.globalSearchInput && elements.searchResultsPanel) {
     elements.globalSearchInput.addEventListener('input', (e) => {
       const q = e.target.value.trim();
@@ -258,17 +263,22 @@
   // إدارة المواد والموضوعات والمصادر
   // -------------------------------------------------------------
 
-  function renderCourses() {
-    const courses = store.getCourses();
+  function renderCourses(searchFilter = '') {
+    let courses = store.getCourses();
     if (!elements.coursesGrid) return;
+
+    if (searchFilter && searchFilter.trim()) {
+      const filter = searchFilter.trim().toLowerCase();
+      courses = courses.filter(c => c.name.toLowerCase().includes(filter) || (c.code && c.code.toLowerCase().includes(filter)));
+    }
 
     if (courses.length === 0) {
       elements.coursesGrid.innerHTML = `
         <div class="info-card" style="text-align:center; grid-column: 1 / -1; padding:2rem;">
-          <h4 style="color:var(--color-primary); font-size:1.1rem; margin-bottom:4px;">دليلك الدراسي فارغ حالياً</h4>
-          <p style="font-size:0.85rem; color:var(--color-muted);">أضف مواد خطتك للبدء بتنظيم الشعب والمصادر واستخدام أدوات الجداول والمذاكرة.</p>
+          <h4 style="color:var(--color-primary); font-size:1.1rem; margin-bottom:4px;">${searchFilter ? 'لا توجد مادة تطابق بحثك' : 'دليلك الدراسي فارغ حالياً'}</h4>
+          <p style="font-size:0.85rem; color:var(--color-muted);">${searchFilter ? 'تأكد من كتابة الاسم أو الرمز بشكل صحيح.' : 'أضف مواد خطتك للبدء بتنظيم الشعب والمصادر واستخدام أدوات الجداول والمذاكرة.'}</p>
         </div>`;
-      renderScheduleCoursePicker();
+      if (!searchFilter) renderScheduleCoursePicker();
       return;
     }
 
@@ -305,7 +315,7 @@
         </article>`;
     }).join('');
 
-    renderScheduleCoursePicker();
+    if (!searchFilter) renderScheduleCoursePicker();
   }
 
   elements.coursesGrid?.addEventListener('click', (e) => {
@@ -374,6 +384,7 @@
       store.deleteTopic(btn.getAttribute('data-topic-id'));
       renderCourseTopics(currentViewCourseId);
       renderCourses();
+      renderStudyPlanUI();
     } else if (act === 'add-res-to-topic') {
       activeTopicForResource = btn.getAttribute('data-topic-id');
       elements.formResource?.reset();
@@ -442,7 +453,6 @@
     renderCourses();
   });
 
-  // حل إغلاق تفاصيل المادة بعد الحذف وتحديث القوائم
   function confirmDeleteCourse(id) {
     const c = store.getCourse(id);
     if (!c) return;
@@ -471,7 +481,6 @@
   // رتّب دوامي: إدارة الشُعب وتوليد الجداول
   // -------------------------------------------------------------
 
-  // حل الحفاظ على اختيارات المواد دون فرض الـ Checked
   function renderScheduleCoursePicker() {
     if (!elements.coursePickerList) return;
     const courses = store.getCourses();
@@ -480,7 +489,6 @@
       return;
     }
 
-    // حفظ المواد المحددة مسبقاً قبل إعادة الرسم
     const previouslyChecked = new Set();
     document.querySelectorAll('input[name="schedule-course-select"]:checked').forEach(cb => {
       previouslyChecked.add(cb.value);
@@ -500,6 +508,7 @@
     renderScheduleSectionsList();
   }
 
+  // إضافة زر الدبوس التفاعلي لتثبيت الشعبة مباشرة
   function renderScheduleSectionsList() {
     if (!elements.sectionsManagerList) return;
     const sections = store.getSections();
@@ -518,8 +527,10 @@
         <div class="section-item-row">
           <div>
             <strong>${c ? store.escapeHtml(c.name) : 'مادة'} — شعبة ${store.escapeHtml(s.sectionNumber)}</strong>
-            ${s.isPinned ? '<span class="pin-badge">📌 مثبتة</span>' : ''}
-            <div style="font-size:0.8rem; color:var(--color-muted);">${store.escapeHtml(meetStr)}</div>
+            <button type="button" class="icon-btn" data-action="toggle-pin-sec" data-id="${s.id}" title="${s.isPinned ? 'إلغاء التثبيت' : 'تثبيت الشعبة في الجداول'}">
+              ${s.isPinned ? '<span class="pin-badge">📌 مثبتة</span>' : '📍 تثبيت'}
+            </button>
+            <div style="font-size:0.8rem; color:var(--color-muted); margin-top:2px;">${store.escapeHtml(meetStr)}</div>
           </div>
           <button type="button" class="icon-btn" data-action="del-sec" data-id="${s.id}">🗑</button>
         </div>`;
@@ -527,11 +538,18 @@
   }
 
   elements.sectionsManagerList?.addEventListener('click', (e) => {
-    const btn = e.target.closest('[data-action="del-sec"]');
+    const btn = e.target.closest('[data-action]');
     if (!btn) return;
-    store.deleteSection(btn.getAttribute('data-id'));
-    renderScheduleSectionsList();
-    renderScheduleCoursePicker();
+    const act = btn.getAttribute('data-action');
+    const id = btn.getAttribute('data-id');
+    if (act === 'del-sec') {
+      store.deleteSection(id);
+      renderScheduleSectionsList();
+      renderScheduleCoursePicker();
+    } else if (act === 'toggle-pin-sec') {
+      store.togglePinSection(id);
+      renderScheduleSectionsList();
+    }
   });
 
   elements.btnOpenAddSection?.addEventListener('click', () => {
@@ -693,7 +711,6 @@
 
     const days = store.DAYS.slice(0, 5);
 
-    // 1. جدول سطح المكتب
     let desktopHtml = '<tr>';
     days.forEach(d => {
       const meetings = schedule.dayMap[d.id] || [];
@@ -718,7 +735,6 @@
     desktopHtml += '</tr>';
     if (elements.timetableGridBody) elements.timetableGridBody.innerHTML = desktopHtml;
 
-    // 2. جدول الموبايل
     if (elements.timetableMobileList) {
       let mobileHtml = '';
       days.forEach(d => {
@@ -1159,7 +1175,7 @@
     if (elements.redistributePreviewContent) {
       elements.redistributePreviewContent.innerHTML = `
         <p style="font-size:0.9rem;">سيتم الاحتفاظ بالمهام المكتملة مسبقاً، وتوزيع ${preview.scheduledCount} جلسة جديدة.</p>
-        ${preview.deficit ? `<div style="background:rgba(248,113,113,0.15); border:1px solid var(--color-danger); padding:8px; border-radius:6px; margin:8px 0; color:#FECACA;">⚠️️ عجز قدره ${preview.deficit.totalUnscheduledMinutes} دقيقة.</div>` : ''}
+        ${preview.deficit ? `<div style="background:rgba(248,113,113,0.15); border:1px solid var(--color-danger); padding:8px; border-radius:6px; margin:8px 0; color:#FECACA;">⚠️ عجز قدره ${preview.deficit.totalUnscheduledMinutes} دقيقة.</div>` : ''}
       `;
     }
     showModal(elements.modalRedistributePreview);
