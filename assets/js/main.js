@@ -1,6 +1,6 @@
 /**
  * سند الطالب | SANAD — المحرك البرمجي الموحد والشامل
- * إدارة مرنة للنوافذ المنبثقة (.is-open) وتكامل كافة أدوات المنظومة
+ * حل مشكلات عرض الهاتف، استخراج نصوص البوابة، ونوافذ التعديل
  */
 
 (function () {
@@ -155,7 +155,7 @@
   let currentGeneratedSchedules = [];
   let currentActiveScheduleIndex = 0;
 
-  // إدارة النوافذ المنبثقة بشكل مرن وسلس (Dynamic Modal Controller)
+  // إدارة النوافذ المنبثقة
   function showModal(m) {
     if (!m) return;
     m.classList.add('is-open');
@@ -168,20 +168,14 @@
     m.classList.remove('is-open');
   }
 
-  // إغلاق النافذة عند النقر على الخلفية أو أزرار الإغلاق
   document.querySelectorAll('.modal-backdrop').forEach(modal => {
     modal.addEventListener('click', (e) => {
-      if (e.target === modal || e.target.closest('[data-dismiss="modal"]')) {
-        hideModal(modal);
-      }
+      if (e.target === modal || e.target.closest('[data-dismiss="modal"]')) hideModal(modal);
     });
   });
 
-  // إغلاق أي نافذة مفتوحة بزر Escape
   document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') {
-      document.querySelectorAll('.modal-backdrop.is-open').forEach(m => hideModal(m));
-    }
+    if (e.key === 'Escape') document.querySelectorAll('.modal-backdrop.is-open').forEach(m => hideModal(m));
   });
 
   // قائمة الهاتف
@@ -189,7 +183,7 @@
     elements.menuToggle.addEventListener('click', () => elements.mainNav.classList.toggle('is-open'));
   }
 
-  // شريط بيانات الطالب
+  // شريط الطالب
   function renderStudentProfile() {
     const student = store.getStudent();
     if (elements.studentGreeting) {
@@ -438,6 +432,7 @@
     renderCourses();
   });
 
+  // إصلاح بقاء الشعب معلقة عند حذف المادة
   function confirmDeleteCourse(id) {
     const c = store.getCourse(id);
     if (!c) return;
@@ -445,6 +440,8 @@
     deleteAction = () => {
       store.deleteCourse(id);
       renderCourses();
+      renderScheduleSectionsList();
+      renderScheduleCoursePicker();
       renderStudyPlanUI();
       hideModal(elements.deleteModal);
     };
@@ -661,6 +658,7 @@
     renderScheduleTabs();
   });
 
+  // تصيير جدول سطح المكتب + جدول الموبايل
   function renderActiveSchedule(schedule) {
     if (!schedule) return;
     const daysStr = schedule.attendanceDayNames.join('، ');
@@ -672,7 +670,9 @@
       `;
     }
 
-    const days = store.DAYS.slice(0, 5); // الأحد إلى الخميس
+    const days = store.DAYS.slice(0, 5); // من الأحد للخميس
+
+    // 1. جدول الحواسيب المكتبي
     let desktopHtml = '<tr>';
     days.forEach(d => {
       const meetings = schedule.dayMap[d.id] || [];
@@ -696,6 +696,33 @@
     });
     desktopHtml += '</tr>';
     if (elements.timetableGridBody) elements.timetableGridBody.innerHTML = desktopHtml;
+
+    // 2. جدول الموبايل
+    if (elements.timetableMobileList) {
+      let mobileHtml = '';
+      days.forEach(d => {
+        const meetings = schedule.dayMap[d.id] || [];
+        if (meetings.length > 0) {
+          const times = schedule.dailyTimes[d.id];
+          mobileHtml += `
+            <div class="day-agenda-card">
+              <div style="display:flex; justify-content:space-between; font-weight:bold; border-bottom:1px solid var(--color-border); padding-bottom:6px; margin-bottom:8px;">
+                <span style="color:var(--color-accent);">${d.name}</span>
+                <span style="font-family:var(--font-code); color:var(--color-primary);">${times.start} - ${times.end}</span>
+              </div>
+              <div style="display:flex; flex-direction:column; gap:6px;">
+                ${meetings.map(m => `
+                  <div class="meeting-block ${m.isLab ? 'is-lab' : ''}">
+                    <div class="meeting-title">${store.escapeHtml(m.courseName)} — شعبة ${store.escapeHtml(m.sectionNumber)}</div>
+                    <div class="meeting-time">${m.startTime} - ${m.endTime}${m.isLab ? '• [مختبر]' : ''}</div>
+                  </div>
+                `).join('')}
+              </div>
+            </div>`;
+        }
+      });
+      elements.timetableMobileList.innerHTML = mobileHtml || '<p style="color:var(--color-muted); text-align:center; padding:1rem;">لا توجد محاضرات مجدولة.</p>';
+    }
   }
 
   elements.btnSaveSchedule?.addEventListener('click', () => {
@@ -733,9 +760,8 @@
     elements.importModePaste.style.display = 'none';
   });
 
-  elements.btnParsePastedText?.addEventListener('click', () => {
-    const text = elements.smartPasteTextarea.value.trim();
-    if (!text) return alert('الرجاء لصق نص الجدول أولاً.');
+  // تفكيك وتحليل نصوص البوابة
+  function parseTextLines(text) {
     const lines = text.split('\n');
     const parsed = [];
     lines.forEach((line, idx) => {
@@ -744,15 +770,39 @@
         let sH = parseInt(timeMatch[1], 10), sM = timeMatch[2], eH = parseInt(timeMatch[3], 10), eM = timeMatch[4];
         if (sH >= 1 && sH <= 7) sH += 12;
         if (eH >= 1 && eH <= 7) eH += 12;
+
         const days = /ح\s*ث\s*خ/i.test(line) ? ['sun', 'tue', 'thu'] : (/ن\s*ر/i.test(line) ? ['mon', 'wed'] : ['sun', 'tue', 'thu']);
-        const words = line.split(/\s+/).filter(w => !/\d|:|–|-|ح|ث|خ|ن|ر/.test(w));
+
+        // استخراج اسم المادة دون حذف الحروف العربية
+        const beforeTime = line.split(timeMatch[0])[0].trim();
+        const words = beforeTime.split(/\s+/).filter(w => {
+          const isDayToken = /^(ح|ث|خ|ن|ر|الأحد|الاحد|الإثنين|الاثنين|الثلاثاء|الأربعاء|الاربعاء|الخميس)$/i.test(w.trim());
+          const isNumeric = /^\d+$/.test(w.trim());
+          return !isDayToken && !isNumeric;
+        });
+
+        const courseName = words.slice(0, 4).join(' ').trim() || `مادة (${idx + 1})`;
+
         parsed.push({
-          courseName: words.slice(0, 3).join(' ') || `مادة (${idx + 1})`,
+          courseName: courseName,
           sectionNumber: '1',
-          meetings: days.map(d => ({ day: d, startTime: `${String(sH).padStart(2,'0')}:${sM}`, endTime: `${String(eH).padStart(2,'0')}:${eM}`, type: 'in_person', isLab: /مختبر/i.test(line) }))
+          meetings: days.map(d => ({
+            day: d,
+            startTime: `${String(sH).padStart(2,'0')}:${sM}`,
+            endTime: `${String(eH).padStart(2,'0')}:${eM}`,
+            type: 'in_person',
+            isLab: /مختبر|عملي|lab/i.test(line)
+          }))
         });
       }
     });
+    return parsed;
+  }
+
+  elements.btnParsePastedText?.addEventListener('click', () => {
+    const text = elements.smartPasteTextarea.value.trim();
+    if (!text) return alert('الرجاء لصق نص الجدول أولاً.');
+    const parsed = parseTextLines(text);
 
     if (parsed.length === 0) return alert('لم يتم العثور على أوقات مثل (09:30 - 11:00) في النص.');
     stagedExtractedData = parsed;
@@ -765,9 +815,58 @@
       </div>`).join('');
   });
 
+  // معالجة اختيار ملف الصورة للقارئ البصري
+  elements.ocrDropzone?.addEventListener('click', () => elements.ocrFileInput?.click());
+
+  elements.ocrFileInput?.addEventListener('change', async (e) => {
+    if (!e.target.files || !e.target.files[0]) return;
+    const file = e.target.files[0];
+
+    if (!window.Tesseract) {
+      return alert('محرك القراءة غير متصل. استخدمي خيار "📋 لصق نص الجدول" فهو فوري وأدق بنسبة 100%.');
+    }
+
+    elements.ocrProgressBox.style.display = 'block';
+    elements.ocrStatusText.textContent = 'جارٍ مسح أوقات المحاضرات ضوئياً...';
+    elements.ocrPercentageText.textContent = '10%';
+    elements.ocrProgressFill.style.width = '10%';
+
+    try {
+      const result = await window.Tesseract.recognize(file, 'ara+eng', {
+        logger: m => {
+          if (m.status === 'recognizing text') {
+            const p = Math.round((m.progress || 0) * 100);
+            elements.ocrPercentageText.textContent = `${p}%`;
+            elements.ocrProgressFill.style.width = `${p}%`;
+          }
+        }
+      });
+
+      const parsed = parseTextLines(result.data.text || '');
+      if (parsed.length === 0) {
+        alert('تم مسح الصورة ولكن خط الجدول غير واضح. يفضل نسخ النص بالفأرة ولصقه في تبويب "لصق نص الجدول".');
+        return;
+      }
+
+      stagedExtractedData = parsed;
+      elements.importPreviewSection.style.display = 'block';
+      elements.btnConfirmSaveImported.style.display = 'inline-flex';
+      elements.parsedCountBadge.textContent = `${parsed.length} شعبة`;
+      elements.parsedSectionsContainer.innerHTML = parsed.map(p => `
+        <div style="background:var(--color-bg); padding:6px 10px; border-radius:4px; border:1px solid var(--color-border); font-size:0.85rem;">
+          <strong>${store.escapeHtml(p.courseName)}</strong> (${p.meetings[0].startTime} - ${p.meetings[0].endTime})
+        </div>`).join('');
+
+    } catch (err) {
+      alert('حدث خطأ أثناء فحص الصورة. يمكنك نسخ النص ولصقه مباشرة.');
+    } finally {
+      elements.ocrProgressBox.style.display = 'none';
+    }
+  });
+
   elements.btnConfirmSaveImported?.addEventListener('click', () => {
     stagedExtractedData.forEach(item => {
-      let c = store.getCourses().find(course => course.name === item.courseName);
+      let c = store.getCourses().find(course => course.name.toLowerCase() === item.courseName.toLowerCase());
       let cId = c ? c.id : null;
       if (!c) {
         const added = store.addCourse({ name: item.courseName, hours: 3, isCurrentSemester: true });
@@ -938,6 +1037,7 @@
     }
   });
 
+  // تسجيل الإنجاز الجزئي
   elements.formPartialComplete?.addEventListener('submit', (e) => {
     e.preventDefault();
     if (!pendingPartialSessionId) return;
@@ -946,12 +1046,14 @@
     renderStudyPlanUI();
   });
 
+  // تفعيل حفظ تعديل توقيت الجلسة يدوياً
   elements.formEditSessionTime?.addEventListener('submit', (e) => {
     e.preventDefault();
     if (!pendingEditSessionId) return;
     const date = elements.inputEditSessionDate.value;
     const start = elements.inputEditSessionStart.value;
     const end = elements.inputEditSessionEnd.value;
+
     const res = store.editSessionTime(pendingEditSessionId, date, start, end);
     if (!res.success) {
       alert(res.error);
