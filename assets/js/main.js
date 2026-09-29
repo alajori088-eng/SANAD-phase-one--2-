@@ -1,6 +1,6 @@
 /**
- * سند الطالب | SANAD — المحرك البرمجي الموحد والشامل (v4 النهائي المحدث)
- * تفعيل تنبيهات الجداول القديمة، إغلاق القائمة تلقائياً، والتحقق من التواريخ والأوقات
+ * سند الطالب | SANAD — المحرك البرمجي الموحد والشامل (v4 النهائي المكتمل)
+ * فك شفرات الأيام الفردية والمختبرات، أوقات الفراغ المرنة، وإدارة المهام الأصلية
  */
 
 (function () {
@@ -15,6 +15,7 @@
   const elements = {
     corruptedBanner: document.getElementById('corrupted-data-banner'),
     corruptionMsg: document.getElementById('corruption-message'),
+    btnFactoryReset: document.getElementById('btn-factory-reset'),
     menuToggle: document.getElementById('menu-toggle'),
     mainNav: document.getElementById('main-nav'),
     studentGreeting: document.getElementById('student-greeting'),
@@ -97,6 +98,7 @@
     planProgressPctText: document.getElementById('plan-progress-pct-text'),
     planProgressHoursText: document.getElementById('plan-progress-hours-text'),
     planProgressBarFill: document.getElementById('plan-progress-bar-fill'),
+    studyTasksManagerList: document.getElementById('study-tasks-manager-list'),
     btnOpenAddStudyTask: document.getElementById('btn-open-add-study-task'),
     btnOpenStudySettings: document.getElementById('btn-open-study-settings'),
     btnTriggerRedistribute: document.getElementById('btn-trigger-redistribute'),
@@ -122,6 +124,8 @@
     formStudySettings: document.getElementById('form-study-settings'),
     inputStudyStartDate: document.getElementById('input-study-start-date'),
     inputStudyEndDate: document.getElementById('input-study-end-date'),
+    inputStudyDailyStart: document.getElementById('input-study-daily-start'),
+    inputStudyDailyEnd: document.getElementById('input-study-daily-end'),
     inputStudySessionLen: document.getElementById('input-study-session-len'),
     inputStudyBreakLen: document.getElementById('input-study-break-len'),
     inputStudyTransitBuffer: document.getElementById('input-study-transit-buffer'),
@@ -154,6 +158,13 @@
     elements.corruptedBanner.style.display = 'flex';
   }
 
+  elements.btnFactoryReset?.addEventListener('click', () => {
+    if (confirm('هل ترغب بتصفير الذاكرة وإعادة ضبط المصنع؟ سيتم مسح كافة البيانات المسجلة.')) {
+      store.resetFactory();
+      location.reload();
+    }
+  });
+
   function showModal(m) {
     if (!m) return;
     m.classList.add('is-open');
@@ -176,13 +187,10 @@
     if (e.key === 'Escape') document.querySelectorAll('.modal-backdrop.is-open').forEach(m => hideModal(m));
   });
 
-  // قائمة الهاتف مع إغلاق تلقائي عند النقر على أي رابط
   if (elements.menuToggle && elements.mainNav) {
     elements.menuToggle.addEventListener('click', () => elements.mainNav.classList.toggle('is-open'));
     elements.mainNav.querySelectorAll('.nav-link').forEach(link => {
-      link.addEventListener('click', () => {
-        elements.mainNav.classList.remove('is-open');
-      });
+      link.addEventListener('click', () => elements.mainNav.classList.remove('is-open'));
     });
   }
 
@@ -236,7 +244,6 @@
     renderCourses(e.target.value);
   });
 
-  // البحث الشامل
   if (elements.globalSearchInput && elements.searchResultsPanel) {
     elements.globalSearchInput.addEventListener('input', (e) => {
       const q = e.target.value.trim();
@@ -604,7 +611,6 @@
 
   document.getElementById('btn-add-meeting-row')?.addEventListener('click', addMeetingRow);
 
-  // التحقق من أن وقت النهاية بعد وقت البداية للشعبة
   elements.sectionForm?.addEventListener('submit', (e) => {
     e.preventDefault();
     const rows = document.querySelectorAll('#meetings-rows-container > div');
@@ -786,7 +792,7 @@
                 ${meetings.map(m => `
                   <div class="meeting-block ${m.isLab ? 'is-lab' : ''}">
                     <div class="meeting-title">${store.escapeHtml(m.courseName)} — شعبة ${store.escapeHtml(m.sectionNumber)}</div>
-                    <div class="meeting-time">${m.startTime} - ${m.endTime}${m.isLab ? '• [مختبر]' : ''}</div>
+                    <div class="meeting-time">${m.startTime} - ${m.endTime} ${m.isLab ? '• [مختبر]' : ''}</div>
                   </div>
                 `).join('')}
               </div>
@@ -833,6 +839,7 @@
     elements.importModePaste.style.display = 'none';
   });
 
+  // تفكيك وتحليل نصوص البوابة مع استخراج دقيق للأيام الفردية والمختبرات وأرقام الشعب
   function parseTextLines(text) {
     const lines = text.split('\n');
     const parsed = [];
@@ -843,8 +850,29 @@
         if (sH >= 1 && sH <= 7) sH += 12;
         if (eH >= 1 && eH <= 7) eH += 12;
 
-        const days = /ح\s*ث\s*خ/i.test(line) ? ['sun', 'tue', 'thu'] : (/ن\s*ر/i.test(line) ? ['mon', 'wed'] : ['sun', 'tue', 'thu']);
+        // استخراج الأيام بدقة (أيام مفردة / أيام ثنائية / ثلاثية)
+        let days = [];
+        if (/ح\s*ث\s*خ/i.test(line) || /أحد\s*ثلاثاء\s*خميس/i.test(line)) {
+          days = ['sun', 'tue', 'thu'];
+        } else if (/ن\s*ر/i.test(line) || /إثنين\s*أربعاء/i.test(line) || /اثنين\s*اربعاء/i.test(line)) {
+          days = ['mon', 'wed'];
+        } else if (/ح\s*ث/i.test(line)) {
+          days = ['sun', 'tue'];
+        } else {
+          if (/(^|\s)(خميس|خ)(\s|$)/i.test(line)) days.push('thu');
+          if (/(^|\s)(أحد|احد|ح)(\s|$)/i.test(line)) days.push('sun');
+          if (/(^|\s)(إثنين|اثنين|ن)(\s|$)/i.test(line)) days.push('mon');
+          if (/(^|\s)(ثلاثاء|ث)(\s|$)/i.test(line)) days.push('tue');
+          if (/(^|\s)(أربعاء|اربعاء|ر)(\s|$)/i.test(line)) days.push('wed');
+        }
+        if (days.length === 0) days = ['sun', 'tue', 'thu'];
 
+        // استخراج رقم الشعبة الحقيقي
+        let secNum = '1';
+        const secMatch = line.match(/(?:شعبة|ش|sec|section)[\s:#-]*(\d+)/i) || line.match(/\b([1-9]\d?)\b/);
+        if (secMatch) secNum = secMatch[1];
+
+        // استخراج اسم المادة
         const beforeTime = line.split(timeMatch[0])[0].trim();
         const words = beforeTime.split(/\s+/).filter(w => {
           const isDayToken = /^(ح|ث|خ|ن|ر|الأحد|الاحد|الإثنين|الاثنين|الثلاثاء|الأربعاء|الاربعاء|الخميس)$/i.test(w.trim());
@@ -856,7 +884,7 @@
 
         parsed.push({
           courseName: courseName,
-          sectionNumber: '1',
+          sectionNumber: secNum,
           meetings: days.map(d => ({
             day: d,
             startTime: `${String(sH).padStart(2,'0')}:${sM}`,
@@ -882,7 +910,7 @@
     elements.parsedCountBadge.textContent = `${parsed.length} شعبة`;
     elements.parsedSectionsContainer.innerHTML = parsed.map(p => `
       <div style="background:var(--color-bg); padding:6px 10px; border-radius:4px; border:1px solid var(--color-border); font-size:0.85rem;">
-        <strong>${store.escapeHtml(p.courseName)}</strong> (${p.meetings[0].startTime} - ${p.meetings[0].endTime})
+        <strong>${store.escapeHtml(p.courseName)}</strong> — شعبة ${store.escapeHtml(p.sectionNumber)} (${p.meetings[0].startTime} - ${p.meetings[0].endTime})
       </div>`).join('');
   });
 
@@ -924,7 +952,7 @@
       elements.parsedCountBadge.textContent = `${parsed.length} شعبة`;
       elements.parsedSectionsContainer.innerHTML = parsed.map(p => `
         <div style="background:var(--color-bg); padding:6px 10px; border-radius:4px; border:1px solid var(--color-border); font-size:0.85rem;">
-          <strong>${store.escapeHtml(p.courseName)}</strong> (${p.meetings[0].startTime} - ${p.meetings[0].endTime})
+          <strong>${store.escapeHtml(p.courseName)}</strong> — شعبة ${store.escapeHtml(p.sectionNumber)} (${p.meetings[0].startTime} - ${p.meetings[0].endTime})
         </div>`).join('');
 
     } catch (err) {
@@ -962,6 +990,7 @@
     }
     renderStudyStats();
     renderDeficitCard();
+    renderStudyTasksManager();
     if (activePlanView === 'today') renderTodayView();
     else renderWeekView();
   }
@@ -976,6 +1005,35 @@
       elements.planProgressHoursText.textContent = `${compH} من ${totalH} ساعة مكتملة (${stats.tasksCount} مهمة)`;
     }
   }
+
+  // عرض وإدارة قائمة الموضوعات الأصلية مع إمكانية حذفها نهائياً
+  function renderStudyTasksManager() {
+    if (!elements.studyTasksManagerList) return;
+    const plan = store.getStudyPlan();
+    if (!plan.tasks || plan.tasks.length === 0) {
+      elements.studyTasksManagerList.innerHTML = '<span style="color:var(--color-muted);">لا توجد موضوعات مسجلة حالياً.</span>';
+      return;
+    }
+    elements.studyTasksManagerList.innerHTML = plan.tasks.map(t => `
+      <div style="display:flex; justify-content:space-between; align-items:center; background:var(--color-bg); padding:6px 10px; border-radius:6px; border:1px solid var(--color-border);">
+        <div>
+          <strong style="color:var(--color-text);">${store.escapeHtml(t.courseName)}:</strong> ${store.escapeHtml(t.topicTitle)}
+          <span style="font-size:0.75rem; color:var(--color-muted); margin-right:4px;">(${t.remainingMinutes} دقيقة متبقية ${t.reviewMinutesRequired ? `+ ${t.reviewMinutesRequired} مراجعة` : ''})</span>
+        </div>
+        <button type="button" class="icon-btn" data-action="delete-study-task" data-id="${t.id}" title="حذف المهمة نهائياً من الخطة" style="color:var(--color-danger);">🗑</button>
+      </div>
+    `).join('');
+  }
+
+  elements.studyTasksManagerList?.addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-action="delete-study-task"]');
+    if (!btn) return;
+    const id = btn.getAttribute('data-id');
+    if (confirm('هل ترغب بحذف هذه المهمة وجلساتها نهائياً من الخطة؟')) {
+      store.deleteStudyTask(id);
+      renderStudyPlanUI();
+    }
+  });
 
   function renderDeficitCard() {
     if (!elements.studyPlanDeficitCard) return;
@@ -1179,7 +1237,7 @@
     });
     hideModal(elements.modalStudyTask);
     store.planStudySchedule();
-    renderCourses(); // تحديث المواد فوراً لتوثيق الموضوع الجديد
+    renderCourses();
     renderStudyPlanUI();
   });
 
@@ -1187,31 +1245,39 @@
     const s = store.getStudyPlan().settings;
     if (elements.inputStudyStartDate) elements.inputStudyStartDate.value = s.startDate;
     if (elements.inputStudyEndDate) elements.inputStudyEndDate.value = s.endDate;
+    if (elements.inputStudyDailyStart) elements.inputStudyDailyStart.value = s.dailyStartTime || '16:00';
+    if (elements.inputStudyDailyEnd) elements.inputStudyDailyEnd.value = s.dailyEndTime || '22:00';
     if (elements.inputStudySessionLen) elements.inputStudySessionLen.value = s.sessionDuration;
     if (elements.inputStudyBreakLen) elements.inputStudyBreakLen.value = s.breakDuration;
     if (elements.inputStudyTransitBuffer) elements.inputStudyTransitBuffer.value = s.transitBuffer;
     showModal(elements.modalStudySettings);
   });
 
-  // التحقق الصارم من أن تاريخ النهاية بعد تاريخ البداية
   elements.formStudySettings?.addEventListener('submit', (e) => {
     e.preventDefault();
     const startVal = elements.inputStudyStartDate.value;
     const endVal = elements.inputStudyEndDate.value;
+    const dailyStart = elements.inputStudyDailyStart.value;
+    const dailyEnd = elements.inputStudyDailyEnd.value;
 
     if (endVal < startVal) {
       return alert('خطأ: تاريخ نهاية الخطة يجب أن يكون مساوياً أو بعد تاريخ البداية.');
+    }
+    if (dailyEnd <= dailyStart) {
+      return alert('خطأ: وقت انتهاء المذاكرة اليومي يجب أن يكون بعد وقت البدء.');
     }
 
     store.setStudyPlanSettings({
       startDate: startVal,
       endDate: endVal,
+      dailyStartTime: dailyStart,
+      dailyEndTime: dailyEnd,
       sessionDuration: parseInt(elements.inputStudySessionLen.value, 10) || 50,
       breakDuration: parseInt(elements.inputStudyBreakLen.value, 10) || 10,
       transitBuffer: parseInt(elements.inputStudyTransitBuffer.value, 10) || 15
     });
     hideModal(elements.modalStudySettings);
-    alert('تم حفظ الإعدادات بنجاح.');
+    alert('تم حفظ الإعدادات بنجاح. يمكنك الآن الضغط على "إعادة توزيع الخطة" لتطبيق أوقات الفراغ الجديدة.');
   });
 
   elements.btnTriggerRedistribute?.addEventListener('click', () => {
