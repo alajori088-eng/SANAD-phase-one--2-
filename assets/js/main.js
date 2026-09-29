@@ -1,6 +1,6 @@
 /**
  * سند الطالب | SANAD — المحرك البرمجي الموحد والشامل (v4 النهائي)
- * معالجة تفاعلية للموضوعات، جداول الموبايل، تنبيهات التخزين، وقارئ النصوص
+ * معالجة تفاعلية للموضوعات، حفظ مربعات الاختيار، وإغلاق تفاصيل المواد المحذوفة
  */
 
 (function () {
@@ -13,7 +13,6 @@
 
   // عناصر واجهة المستخدم الكاملة
   const elements = {
-    // الشريط والبيانات
     corruptedBanner: document.getElementById('corrupted-data-banner'),
     corruptionMsg: document.getElementById('corruption-message'),
     menuToggle: document.getElementById('menu-toggle'),
@@ -25,11 +24,9 @@
     profileModal: document.getElementById('modal-profile'),
     profileForm: document.getElementById('form-profile'),
 
-    // البحث
     globalSearchInput: document.getElementById('global-search-input'),
     searchResultsPanel: document.getElementById('search-results-panel'),
 
-    // المواد والموضوعات (المرحلة 1 و 2)
     courseSearchInput: document.getElementById('course-search-input'),
     openAddCourseBtn: document.getElementById('btn-open-add-course'),
     coursesListView: document.getElementById('courses-list-view'),
@@ -53,7 +50,6 @@
     deleteConfirmBtn: document.getElementById('btn-confirm-delete'),
     deleteMessage: document.getElementById('delete-modal-message'),
 
-    // رتّب دوامي (المرحلة 3)
     savedScheduleWarning: document.getElementById('saved-schedule-outdated-alert'),
     coursePickerList: document.getElementById('schedule-course-picker'),
     sectionsManagerList: document.getElementById('schedule-sections-list'),
@@ -79,7 +75,6 @@
     sectionModal: document.getElementById('modal-section'),
     sectionForm: document.getElementById('form-section'),
 
-    // الاستيراد الذكي
     smartImportModal: document.getElementById('modal-smart-import'),
     tabBtnPaste: document.getElementById('tab-btn-paste'),
     tabBtnImage: document.getElementById('tab-btn-image'),
@@ -98,7 +93,6 @@
     parsedSectionsContainer: document.getElementById('parsed-sections-container'),
     btnConfirmSaveImported: document.getElementById('btn-confirm-save-imported'),
 
-    // خطة الدراسة (المرحلة 4)
     studyPlanScheduleAlert: document.getElementById('study-plan-schedule-alert'),
     planProgressPctText: document.getElementById('plan-progress-pct-text'),
     planProgressHoursText: document.getElementById('plan-progress-hours-text'),
@@ -161,7 +155,6 @@
     elements.corruptedBanner.style.display = 'flex';
   }
 
-  // إدارة النوافذ المنبثقة
   function showModal(m) {
     if (!m) return;
     m.classList.add('is-open');
@@ -184,12 +177,10 @@
     if (e.key === 'Escape') document.querySelectorAll('.modal-backdrop.is-open').forEach(m => hideModal(m));
   });
 
-  // قائمة الهاتف
   if (elements.menuToggle && elements.mainNav) {
     elements.menuToggle.addEventListener('click', () => elements.mainNav.classList.toggle('is-open'));
   }
 
-  // شريط الطالب
   function renderStudentProfile() {
     const student = store.getStudent();
     if (elements.studentGreeting) {
@@ -227,7 +218,6 @@
     hideModal(elements.profileModal);
   });
 
-  // البحث الشامل
   if (elements.globalSearchInput && elements.searchResultsPanel) {
     elements.globalSearchInput.addEventListener('input', (e) => {
       const q = e.target.value.trim();
@@ -347,7 +337,6 @@
     renderCourses();
   });
 
-  // عرض الموضوعات مع زر التبديل السريع لحالة الإنجاز
   function renderCourseTopics(courseId) {
     if (!elements.detailTopicsList) return;
     const topics = store.getTopicsByCourse(courseId);
@@ -453,12 +442,18 @@
     renderCourses();
   });
 
+  // حل إغلاق تفاصيل المادة بعد الحذف وتحديث القوائم
   function confirmDeleteCourse(id) {
     const c = store.getCourse(id);
     if (!c) return;
     elements.deleteMessage.textContent = `هل أنت متأكد من حذف مادة "${c.name}"؟ سيتم حذف جميع شعبها ومصادرها وموضوعاتها نهائياً.`;
     deleteAction = () => {
       store.deleteCourse(id);
+      if (currentViewCourseId === id) {
+        if (elements.courseDetailsView) elements.courseDetailsView.style.display = 'none';
+        if (elements.coursesListView) elements.coursesListView.style.display = 'block';
+        currentViewCourseId = null;
+      }
       renderCourses();
       renderScheduleSectionsList();
       renderScheduleCoursePicker();
@@ -476,6 +471,7 @@
   // رتّب دوامي: إدارة الشُعب وتوليد الجداول
   // -------------------------------------------------------------
 
+  // حل الحفاظ على اختيارات المواد دون فرض الـ Checked
   function renderScheduleCoursePicker() {
     if (!elements.coursePickerList) return;
     const courses = store.getCourses();
@@ -483,15 +479,24 @@
       elements.coursePickerList.innerHTML = '<p style="font-size:0.85rem; color:var(--color-muted);">أضف موادك أولاً من قسم تخصصي وموادي للبدء.</p>';
       return;
     }
-    elements.coursePickerList.innerHTML = courses.map(c => `
-      <div class="course-pick-row">
-        <label class="course-pick-label">
-          <input type="checkbox" name="schedule-course-select" value="${c.id}" checked>
-          <span>${store.escapeHtml(c.name)} ${c.code ? `(${store.escapeHtml(c.code)})` : ''}</span>
-        </label>
-        <span class="tag-badge">${store.getSectionsByCourse(c.id).length} شُعب</span>
-      </div>
-    `).join('');
+
+    // حفظ المواد المحددة مسبقاً قبل إعادة الرسم
+    const previouslyChecked = new Set();
+    document.querySelectorAll('input[name="schedule-course-select"]:checked').forEach(cb => {
+      previouslyChecked.add(cb.value);
+    });
+
+    elements.coursePickerList.innerHTML = courses.map(c => {
+      const isChecked = previouslyChecked.size > 0 ? previouslyChecked.has(c.id) : true;
+      return `
+        <div class="course-pick-row">
+          <label class="course-pick-label">
+            <input type="checkbox" name="schedule-course-select" value="${c.id}" ${isChecked ? 'checked' : ''}>
+            <span>${store.escapeHtml(c.name)} ${c.code ? `(${store.escapeHtml(c.code)})` : ''}</span>
+          </label>
+          <span class="tag-badge">${store.getSectionsByCourse(c.id).length} شُعب</span>
+        </div>`;
+    }).join('');
     renderScheduleSectionsList();
   }
 
@@ -589,7 +594,6 @@
     renderCourses();
   });
 
-  // الفترات الممنوعة
   elements.btnOpenAddBlocked?.addEventListener('click', () => {
     elements.formBlockedTime?.reset();
     showModal(elements.modalBlockedTime);
@@ -627,7 +631,6 @@
     renderBlockedTimes();
   });
 
-  // توليد الجداول الأسبوعية
   elements.btnGenerateSchedule?.addEventListener('click', () => {
     const forbidden = [];
     document.querySelectorAll('input[name="forbidden-days"]:checked').forEach(cb => forbidden.push(cb.value));
@@ -747,6 +750,7 @@
     const cur = currentGeneratedSchedules[currentActiveScheduleIndex];
     if (!cur) return;
     store.saveSelectedSchedule(cur);
+    if (elements.savedScheduleWarning) elements.savedScheduleWarning.style.display = 'none';
     alert('تم حفظ هذا الجدول بنجاح في متصفحك.');
   });
 
@@ -973,7 +977,6 @@
     elements.planViewTodayContainer.innerHTML = todaySessions.map(sess => renderSessionCardHtml(sess)).join('');
   }
 
-  // عرض اسم اليوم العربي بجانب التاريخ في الأجندة
   function renderWeekView() {
     if (!elements.planViewWeekContainer) return;
     const plan = store.getStudyPlan();
@@ -1072,6 +1075,7 @@
     const date = elements.inputEditSessionDate.value;
     const start = elements.inputEditSessionStart.value;
     const end = elements.inputEditSessionEnd.value;
+
     const res = store.editSessionTime(pendingEditSessionId, date, start, end);
     if (!res.success) {
       alert(res.error);
@@ -1155,7 +1159,7 @@
     if (elements.redistributePreviewContent) {
       elements.redistributePreviewContent.innerHTML = `
         <p style="font-size:0.9rem;">سيتم الاحتفاظ بالمهام المكتملة مسبقاً، وتوزيع ${preview.scheduledCount} جلسة جديدة.</p>
-        ${preview.deficit ? `<div style="background:rgba(248,113,113,0.15); border:1px solid var(--color-danger); padding:8px; border-radius:6px; margin:8px 0; color:#FECACA;">⚠️ عجز قدره ${preview.deficit.totalUnscheduledMinutes} دقيقة.</div>` : ''}
+        ${preview.deficit ? `<div style="background:rgba(248,113,113,0.15); border:1px solid var(--color-danger); padding:8px; border-radius:6px; margin:8px 0; color:#FECACA;">⚠️️ عجز قدره ${preview.deficit.totalUnscheduledMinutes} دقيقة.</div>` : ''}
       `;
     }
     showModal(elements.modalRedistributePreview);

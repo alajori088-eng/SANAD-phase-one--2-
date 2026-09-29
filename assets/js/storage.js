@@ -1,6 +1,6 @@
 /**
- * سند الطالب | SANAD — وحدة البيانات والتخزين والمحرك المشترك (v4 النهائي)
- * معالجة القيود الكاملة، منع الأخطاء الحسابية، وحظر التعارضات المزدوجة
+ * سند الطالب | SANAD — وحدة البيانات والتخزين والمحرك المشترك (v4 المستقر)
+ * معالجة الجدولة المستقبلية، الحفاظ على الإنجاز الجزئي، والمفاضلة الذكية للجداول
  */
 
 (function (window) {
@@ -204,14 +204,7 @@
         isCorrupted = false;
         return { success: true, isNew: true };
       }
-      let parsed;
-      try {
-        parsed = JSON.parse(raw);
-      } catch (e) {
-        isCorrupted = true;
-        corruptionDetails = 'تعذر قراءة البيانات المحفوظة بصيغة JSON صحيحة.';
-        return { success: false, corrupted: true };
-      }
+      let parsed = JSON.parse(raw);
       if (!validateSchema(parsed)) {
         isCorrupted = true;
         corruptionDetails = 'بنية البيانات السابقة غير متطابقة مع الإصدار الحالي.';
@@ -223,7 +216,7 @@
       return { success: true, data: state };
     } catch (e) {
       isCorrupted = true;
-      corruptionDetails = 'تعذر الوصول إلى مساحة التخزين في المتصفح.';
+      corruptionDetails = 'تعذر قراءة البيانات المحفوظة في المتصفح.';
       return { success: false, error: e.message };
     }
   }
@@ -266,7 +259,6 @@
     return { success: true, course: newCourse };
   }
 
-  // طرد أشباح المحاضرات والمهام عند حذف المادة
   function deleteCourse(id) {
     state.courses = state.courses.filter(c => c.id !== id);
     state.topics = state.topics.filter(t => t.courseId !== id);
@@ -374,9 +366,11 @@
     return state.sections.some(s => s.updatedAt > savedTime);
   }
 
+  // محرك توليد الجداول مع خوارزمية الترتيب والمفاضلة الذكية
   function generateSchedules(selectedCourseIds) {
     if (!selectedCourseIds || selectedCourseIds.length === 0) return { success: false, error: 'اختر مادة واحدة على الأقل.' };
     const constraints = state.scheduleConstraints;
+    const preferences = state.schedulePreferences || { minimizeDays: true, minimizeGaps: true, preferredDayOff: '' };
     const earliestMin = timeToMinutes(constraints.earliestStart);
     const latestMin = timeToMinutes(constraints.latestEnd);
     const coursesPool = [];
@@ -397,7 +391,7 @@
     function backtrack(idx, current) {
       if (iterationCount++ >= 35000) return;
       if (idx === coursesPool.length) {
-        validSchedules.push(evaluateSchedule(current));
+        validSchedules.push(evaluateSchedule(current, preferences));
         return;
       }
       const { course, sections } = coursesPool[idx];
@@ -408,7 +402,7 @@
           const eMin = timeToMinutes(meeting.endTime);
 
           if (sMin < earliestMin || eMin > latestMin) {
-            detectedConflicts.add(`مادة "${course.name}" تقع خارج أوقات الدوام المسموح.`);
+            detectedConflicts.add(`مادة "${course.name}" تقع خارج حدود وقت الدوام المسموح.`);
             valid = false; break;
           }
           if (constraints.forbiddenDays.includes(meeting.day)) {
@@ -429,7 +423,7 @@
           }
           if (!valid) break;
 
-          // فحص التعارض ووقت الانتقال بين المحاضرات
+          // فحص التعارض ووقت الانتقال
           for (const exSec of current) {
             const exCourse = getCourse(exSec.courseId);
             for (const exM of exSec.meetings) {
@@ -463,10 +457,13 @@
 
     backtrack(0, []);
     if (validSchedules.length === 0) return { success: false, conflicts: Array.from(detectedConflicts), error: 'تعذر تكوين جدول خالٍ من التعارضات وفق قيودك الحالية.' };
+
+    // ترتيب الجداول وفق الأفضلية (الأقل فراغات والأقل أيام حضور أولاً)
+    validSchedules.sort((a, b) => a.penaltyScore - b.penaltyScore);
     return { success: true, schedules: validSchedules.slice(0, 3) };
   }
 
-  function evaluateSchedule(sectionsList) {
+  function evaluateSchedule(sectionsList, preferences = {}) {
     const dayMap = {};
     DAYS.forEach(d => { dayMap[d.id] = []; });
     sectionsList.forEach(sec => {
@@ -501,13 +498,20 @@
       }
     });
 
+    // حساب نقاط الجزاء لاختيار أفضل جدول (★ الأنسب)
+    let penaltyScore = 0;
+    if (preferences.minimizeDays) penaltyScore += attendanceDaysCount * 200;
+    if (preferences.minimizeGaps) penaltyScore += totalGapMinutes * 1;
+    if (preferences.preferredDayOff && dayMap[preferences.preferredDayOff]?.length > 0) penaltyScore += 500;
+
     return {
       sections: JSON.parse(JSON.stringify(sectionsList)),
       attendanceDaysCount,
       attendanceDayNames,
       totalGapMinutes,
       dailyTimes,
-      dayMap
+      dayMap,
+      penaltyScore
     };
   }
 
@@ -526,6 +530,7 @@
       id: generateId('st'),
       courseId: taskData.courseId,
       courseName: course.name,
+      topicId: taskData.topicId || '',
       topicTitle: taskData.topicTitle,
       workType: taskData.workType || 'theory',
       difficulty: taskData.difficulty || 'medium',
@@ -558,8 +563,8 @@
       const lectures = state.savedSchedule.schedule.dayMap[dayId] || [];
       const transit = settings.transitBuffer || 15;
       lectures.forEach(lec => {
-        const busyStart = Math.max(0, lec.startMin - transit);
-        const busyEnd = lec.endMin + transit;
+        const busyStart = Math.max(0, lec.startMin - (lec.type === 'in_person' ? transit : 0));
+        const busyEnd = lec.endMin + (lec.type === 'in_person' ? transit : 0);
         const nextFree = [];
         freeWindows.forEach(free => {
           if (busyEnd <= free.start || busyStart >= free.end) nextFree.push(free);
@@ -580,7 +585,11 @@
     const settings = state.studyPlan.settings;
     const sessionLen = settings.sessionDuration || 50;
     const breakLen = settings.breakDuration || 10;
-    const startObj = parseLocalDate(settings.startDate);
+
+    // منع الجدولة في الماضي: نبدأ من اليوم أو تاريخ البداية أيهما أحدث
+    const todayStr = formatLocalDate(new Date());
+    const effectiveStartStr = settings.startDate < todayStr ? todayStr : settings.startDate;
+    const startObj = parseLocalDate(effectiveStartStr);
     const endObj = parseLocalDate(settings.endDate);
 
     const activeTasks = state.studyPlan.tasks
@@ -599,7 +608,27 @@
     const dailyAvailableMap = {};
     dateRangeList.forEach(dStr => { dailyAvailableMap[dStr] = computeAvailableIntervalsForDate(dStr); });
 
-    const completedSessions = state.studyPlan.sessions.filter(s => s.status === 'completed');
+    // الحفاظ التام على الجلسات المكتملة والجزئية
+    const preservedSessions = state.studyPlan.sessions.filter(s => s.status === 'completed' || s.status === 'partial');
+    
+    // حجز أوقات الجلسات المحفوظة لمنع الجدولة فوقها
+    preservedSessions.forEach(ps => {
+      if (dailyAvailableMap[ps.date]) {
+        const psStart = timeToMinutes(ps.startTime);
+        const psEnd = timeToMinutes(ps.endTime);
+        const nextFree = [];
+        dailyAvailableMap[ps.date].forEach(w => {
+          if (psEnd <= w.start || psStart >= w.end) {
+            nextFree.push(w);
+          } else {
+            if (psStart > w.start) nextFree.push({ start: w.start, end: psStart });
+            if (psEnd < w.end) nextFree.push({ start: psEnd, end: w.end });
+          }
+        });
+        dailyAvailableMap[ps.date] = nextFree;
+      }
+    });
+
     const newScheduledSessions = [];
     const affectedTasksDeficit = [];
     let totalUnscheduledMinutes = 0;
@@ -708,7 +737,7 @@
       return { success: true, previewSessions: newScheduledSessions, deficit: deficitReport, scheduledCount: newScheduledSessions.length };
     }
 
-    state.studyPlan.sessions = [...completedSessions, ...newScheduledSessions];
+    state.studyPlan.sessions = [...preservedSessions, ...newScheduledSessions];
     state.studyPlan.lastGeneratedAt = Date.now();
     state.studyPlan.lastDeficit = deficitReport;
     save();
@@ -716,7 +745,7 @@
     return { success: true, sessions: state.studyPlan.sessions, deficit: deficitReport };
   }
 
-  // حل الكارثة الحسابية بخصم الفرق الفعلي فقط
+  // خصم الفرق الفعلي فقط
   function markSessionComplete(sessionId, completedMinutes = null) {
     const sess = state.studyPlan.sessions.find(s => s.id === sessionId);
     if (!sess) return { success: false };
@@ -757,7 +786,6 @@
     return save();
   }
 
-  // منع حجز جلستي مذاكرة في نفس الوقت يدوياً
   function editSessionTime(sessionId, newDate, newStart, newEnd) {
     const sess = state.studyPlan.sessions.find(s => s.id === sessionId);
     if (!sess) return { success: false, error: 'الجلسة غير موجودة.' };
@@ -784,7 +812,6 @@
       }
     }
 
-    // فحص التعارض مع جلسات المذاكرة الأخرى
     for (const other of state.studyPlan.sessions) {
       if (other.id !== sessionId && other.date === newDate) {
         const oS = timeToMinutes(other.startTime);
@@ -821,7 +848,7 @@
     return { courses, count: courses.length };
   }
 
-  // تصدير واجهة الدوال كاملة
+  // تصدير واجهة الدوال كاملة مع دالة updateTopic
   window.SanadStore = {
     load, save,
     isCorrupted: () => isCorrupted,
@@ -830,7 +857,7 @@
     formatLocalDate, parseLocalDate, getDayIdFromDate, escapeHtml,
     getStudent, setStudent,
     getCourses, getCourse, addCourse, deleteCourse,
-    getTopicsByCourse, addTopic, updateTopic, deleteTopic,
+    getTopicsByCourse, addTopic, updateTopic, deleteTopic, // <-- updateTopic مصدرة هنا
     getResourcesByTopic, addResource, deleteResource,
     getSections, getSectionsByCourse, addSection, deleteSection,
     getScheduleConstraints, setScheduleConstraints, addBlockedTime, deleteBlockedTime,
