@@ -1,6 +1,6 @@
 /**
  * سند الطالب | SANAD — المحرك البرمجي الموحد والشامل (v4 النهائي المكتمل)
- * فك شفرات الأيام الفردية والمختبرات، أوقات الفراغ المرنة، وإدارة المهام الأصلية
+ * إظهار النوافذ المنبثقة بقوة، توثيق الموضوعات، وتوجيه ذكي لإضافة المواد
  */
 
 (function () {
@@ -165,9 +165,14 @@
     }
   });
 
+  // إدارة النوافذ المنبثقة بقوة برمجية تمنع أي حجب
   function showModal(m) {
     if (!m) return;
     m.classList.add('is-open');
+    m.style.setProperty('display', 'flex', 'important');
+    m.style.setProperty('opacity', '1', 'important');
+    m.style.setProperty('visibility', 'visible', 'important');
+    m.style.setProperty('pointer-events', 'auto', 'important');
     const firstInput = m.querySelector('input:not([type="hidden"]), select, textarea');
     if (firstInput) setTimeout(() => firstInput.focus(), 50);
   }
@@ -175,6 +180,10 @@
   function hideModal(m) {
     if (!m) return;
     m.classList.remove('is-open');
+    m.style.setProperty('display', 'none', 'important');
+    m.style.setProperty('opacity', '0', 'important');
+    m.style.setProperty('visibility', 'hidden', 'important');
+    m.style.setProperty('pointer-events', 'none', 'important');
   }
 
   document.querySelectorAll('.modal-backdrop').forEach(modal => {
@@ -190,7 +199,9 @@
   if (elements.menuToggle && elements.mainNav) {
     elements.menuToggle.addEventListener('click', () => elements.mainNav.classList.toggle('is-open'));
     elements.mainNav.querySelectorAll('.nav-link').forEach(link => {
-      link.addEventListener('click', () => elements.mainNav.classList.remove('is-open'));
+      link.addEventListener('click', () => {
+        elements.mainNav.classList.remove('is-open');
+      });
     });
   }
 
@@ -539,7 +550,7 @@
     }
     elements.sectionsManagerList.innerHTML = sections.map(s => {
       const c = store.getCourse(s.courseId);
-      const meetStr = s.meetings.map(m => {
+      const meetStr = (s.meetings || []).map(m => {
         const d = store.DAYS.find(day => day.id === m.day)?.name || m.day;
         return `${d} (${m.startTime}-${m.endTime})${m.isLab ? ' [مختبر]' : ''}`;
       }).join(' • ');
@@ -792,7 +803,7 @@
                 ${meetings.map(m => `
                   <div class="meeting-block ${m.isLab ? 'is-lab' : ''}">
                     <div class="meeting-title">${store.escapeHtml(m.courseName)} — شعبة ${store.escapeHtml(m.sectionNumber)}</div>
-                    <div class="meeting-time">${m.startTime} - ${m.endTime} ${m.isLab ? '• [مختبر]' : ''}</div>
+                    <div class="meeting-time">${m.startTime} - ${m.endTime}${m.isLab ? '• [مختبر]' : ''}</div>
                   </div>
                 `).join('')}
               </div>
@@ -839,7 +850,6 @@
     elements.importModePaste.style.display = 'none';
   });
 
-  // تفكيك وتحليل نصوص البوابة مع استخراج دقيق للأيام الفردية والمختبرات وأرقام الشعب
   function parseTextLines(text) {
     const lines = text.split('\n');
     const parsed = [];
@@ -850,7 +860,6 @@
         if (sH >= 1 && sH <= 7) sH += 12;
         if (eH >= 1 && eH <= 7) eH += 12;
 
-        // استخراج الأيام بدقة (أيام مفردة / أيام ثنائية / ثلاثية)
         let days = [];
         if (/ح\s*ث\s*خ/i.test(line) || /أحد\s*ثلاثاء\s*خميس/i.test(line)) {
           days = ['sun', 'tue', 'thu'];
@@ -867,12 +876,10 @@
         }
         if (days.length === 0) days = ['sun', 'tue', 'thu'];
 
-        // استخراج رقم الشعبة الحقيقي
         let secNum = '1';
         const secMatch = line.match(/(?:شعبة|ش|sec|section)[\s:#-]*(\d+)/i) || line.match(/\b([1-9]\d?)\b/);
         if (secMatch) secNum = secMatch[1];
 
-        // استخراج اسم المادة
         const beforeTime = line.split(timeMatch[0])[0].trim();
         const words = beforeTime.split(/\s+/).filter(w => {
           const isDayToken = /^(ح|ث|خ|ن|ر|الأحد|الاحد|الإثنين|الاثنين|الثلاثاء|الأربعاء|الاربعاء|الخميس)$/i.test(w.trim());
@@ -1006,7 +1013,6 @@
     }
   }
 
-  // عرض وإدارة قائمة الموضوعات الأصلية مع إمكانية حذفها نهائياً
   function renderStudyTasksManager() {
     if (!elements.studyTasksManagerList) return;
     const plan = store.getStudyPlan();
@@ -1075,7 +1081,7 @@
     if (!elements.planViewTodayContainer) return;
     const todayStr = store.formatLocalDate(new Date());
     const plan = store.getStudyPlan();
-    const todaySessions = plan.sessions.filter(s => s.date === todayStr);
+    const todaySessions = (plan.sessions || []).filter(s => s.date === todayStr);
 
     if (todaySessions.length === 0) {
       elements.planViewTodayContainer.innerHTML = `
@@ -1090,7 +1096,8 @@
   function renderWeekView() {
     if (!elements.planViewWeekContainer) return;
     const plan = store.getStudyPlan();
-    if (plan.sessions.length === 0) {
+    const sessions = plan.sessions || [];
+    if (sessions.length === 0) {
       elements.planViewWeekContainer.innerHTML = `
         <div class="info-card" style="text-align:center; padding:1.5rem;">
           <h4 style="color:var(--color-primary); font-size:1.1rem;">الخطة الدراسية فارغة حالياً</h4>
@@ -1098,7 +1105,7 @@
       return;
     }
     const groups = {};
-    plan.sessions.forEach(s => {
+    sessions.forEach(s => {
       if (!groups[s.date]) groups[s.date] = [];
       groups[s.date].push(s);
     });
@@ -1195,9 +1202,16 @@
     renderStudyPlanUI();
   });
 
+  // توجيه ذكي: إذا لم تكن هناك مواد بعد، فتح نافذة إضافة مادة مباشرة
   elements.btnOpenAddStudyTask?.addEventListener('click', () => {
     const courses = store.getCourses();
-    if (courses.length === 0) return alert('أضف مادة في قسم تخصصي وموادي أولاً.');
+    if (courses.length === 0) {
+      if (confirm('لا توجد لديك مواد مسجلة بعد في خطتك. هل ترغب بإضافة مادة دراسية الآن أولاً؟')) {
+        elements.courseForm?.reset();
+        showModal(elements.courseModal);
+      }
+      return;
+    }
     if (elements.selectStudyTaskCourse) {
       elements.selectStudyTaskCourse.innerHTML = courses.map(c => `<option value="${c.id}">${store.escapeHtml(c.name)}</option>`).join('');
       updateTopicsDropdown(courses[0].id);

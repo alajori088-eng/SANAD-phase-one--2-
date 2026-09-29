@@ -441,7 +441,9 @@ body {
 .progress-bar-bg { width: 100%; height: 6px; background: var(--color-bg); border-radius: 10px; overflow: hidden; border: 1px solid var(--color-border); }
 .progress-bar-fill { height: 100%; background: var(--color-primary); transition: width 0.3s ease; }
 
-/* نظام النوافذ المنبثقة */
+/* ==========================================================================
+   نظام النوافذ المنبثقة المرن (بدون أقفال)
+   ========================================================================== */
 .modal-backdrop {
   position: fixed;
   inset: 0;
@@ -458,7 +460,8 @@ body {
 
 .modal-backdrop.is-open {
   display: flex !important;
-  opacity: 1;
+  opacity: 1 !important;
+  visibility: visible !important;
 }
 
 .modal-dialog {
