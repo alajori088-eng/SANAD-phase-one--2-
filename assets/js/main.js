@@ -1,6 +1,6 @@
 /**
- * سند الطالب | SANAD — المحرك البرمجي الموحد والشامل
- * حل مشكلات عرض الهاتف، استخراج نصوص البوابة، ونوافذ التعديل
+ * سند الطالب | SANAD — المحرك البرمجي الموحد والشامل (v4 النهائي)
+ * معالجة تفاعلية للموضوعات، جداول الموبايل، تنبيهات التخزين، وقارئ النصوص
  */
 
 (function () {
@@ -154,6 +154,12 @@
   let stagedExtractedData = [];
   let currentGeneratedSchedules = [];
   let currentActiveScheduleIndex = 0;
+
+  // فحص تنبيه تلف البيانات
+  if (store.isCorrupted() && elements.corruptedBanner && elements.corruptionMsg) {
+    elements.corruptionMsg.textContent = store.getCorruptionDetails() || 'حدث خطأ في تحميل البيانات المحفوظة.';
+    elements.corruptedBanner.style.display = 'flex';
+  }
 
   // إدارة النوافذ المنبثقة
   function showModal(m) {
@@ -341,6 +347,7 @@
     renderCourses();
   });
 
+  // عرض الموضوعات مع زر التبديل السريع لحالة الإنجاز
   function renderCourseTopics(courseId) {
     if (!elements.detailTopicsList) return;
     const topics = store.getTopicsByCourse(courseId);
@@ -350,10 +357,14 @@
     }
     elements.detailTopicsList.innerHTML = topics.map(t => {
       const res = store.getResourcesByTopic(t.id);
+      const statusLabel = t.status === 'completed' ? '✅ مكتمل' : (t.status === 'in_progress' ? '⏳ قيد الدراسة' : '🔘 لم أبدأ');
       return `
         <div class="info-card" style="padding:1rem;">
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-            <strong>${store.escapeHtml(t.title)}</strong>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; flex-wrap:wrap; gap:8px;">
+            <div style="display:flex; align-items:center; gap:8px;">
+              <strong>${store.escapeHtml(t.title)}</strong>
+              <button type="button" class="btn btn-secondary btn-sm" data-action="cycle-topic-status" data-topic-id="${t.id}" title="اضغط لتبديل حالة الإنجاز">${statusLabel}</button>
+            </div>
             <div style="display:flex; gap:6px;">
               <button type="button" class="btn btn-secondary btn-sm" data-action="add-res-to-topic" data-topic-id="${t.id}">+ إضافة مصدر</button>
               <button type="button" class="icon-btn" data-action="delete-topic" data-topic-id="${t.id}" style="color:var(--color-danger);">🗑</button>
@@ -373,6 +384,7 @@
     if (act === 'delete-topic') {
       store.deleteTopic(btn.getAttribute('data-topic-id'));
       renderCourseTopics(currentViewCourseId);
+      renderCourses();
     } else if (act === 'add-res-to-topic') {
       activeTopicForResource = btn.getAttribute('data-topic-id');
       elements.formResource?.reset();
@@ -380,6 +392,15 @@
     } else if (act === 'del-res') {
       store.deleteResource(btn.getAttribute('data-id'));
       renderCourseTopics(currentViewCourseId);
+    } else if (act === 'cycle-topic-status') {
+      const tid = btn.getAttribute('data-topic-id');
+      const topic = store.getTopicsByCourse(currentViewCourseId).find(x => x.id === tid);
+      if (topic) {
+        const nextStatus = topic.status === 'not_started' ? 'in_progress' : (topic.status === 'in_progress' ? 'completed' : 'not_started');
+        store.updateTopic(tid, { status: nextStatus });
+        renderCourseTopics(currentViewCourseId);
+        renderCourses();
+      }
     }
   });
 
@@ -432,7 +453,6 @@
     renderCourses();
   });
 
-  // إصلاح بقاء الشعب معلقة عند حذف المادة
   function confirmDeleteCourse(id) {
     const c = store.getCourse(id);
     if (!c) return;
@@ -509,7 +529,6 @@
     renderScheduleCoursePicker();
   });
 
-  // إضافة شعبة يدوياً
   elements.btnOpenAddSection?.addEventListener('click', () => {
     const courses = store.getCourses();
     if (courses.length === 0) {
@@ -658,7 +677,6 @@
     renderScheduleTabs();
   });
 
-  // تصيير جدول سطح المكتب + جدول الموبايل
   function renderActiveSchedule(schedule) {
     if (!schedule) return;
     const daysStr = schedule.attendanceDayNames.join('، ');
@@ -670,9 +688,9 @@
       `;
     }
 
-    const days = store.DAYS.slice(0, 5); // من الأحد للخميس
+    const days = store.DAYS.slice(0, 5);
 
-    // 1. جدول الحواسيب المكتبي
+    // 1. جدول سطح المكتب
     let desktopHtml = '<tr>';
     days.forEach(d => {
       const meetings = schedule.dayMap[d.id] || [];
@@ -760,7 +778,6 @@
     elements.importModePaste.style.display = 'none';
   });
 
-  // تفكيك وتحليل نصوص البوابة
   function parseTextLines(text) {
     const lines = text.split('\n');
     const parsed = [];
@@ -773,7 +790,6 @@
 
         const days = /ح\s*ث\s*خ/i.test(line) ? ['sun', 'tue', 'thu'] : (/ن\s*ر/i.test(line) ? ['mon', 'wed'] : ['sun', 'tue', 'thu']);
 
-        // استخراج اسم المادة دون حذف الحروف العربية
         const beforeTime = line.split(timeMatch[0])[0].trim();
         const words = beforeTime.split(/\s+/).filter(w => {
           const isDayToken = /^(ح|ث|خ|ن|ر|الأحد|الاحد|الإثنين|الاثنين|الثلاثاء|الأربعاء|الاربعاء|الخميس)$/i.test(w.trim());
@@ -815,7 +831,6 @@
       </div>`).join('');
   });
 
-  // معالجة اختيار ملف الصورة للقارئ البصري
   elements.ocrDropzone?.addEventListener('click', () => elements.ocrFileInput?.click());
 
   elements.ocrFileInput?.addEventListener('change', async (e) => {
@@ -958,6 +973,7 @@
     elements.planViewTodayContainer.innerHTML = todaySessions.map(sess => renderSessionCardHtml(sess)).join('');
   }
 
+  // عرض اسم اليوم العربي بجانب التاريخ في الأجندة
   function renderWeekView() {
     if (!elements.planViewWeekContainer) return;
     const plan = store.getStudyPlan();
@@ -974,11 +990,16 @@
       groups[s.date].push(s);
     });
 
-    elements.planViewWeekContainer.innerHTML = Object.keys(groups).sort().map(dStr => `
-      <div class="agenda-day-group">
-        <div class="agenda-date-heading">📅 ${dStr} (${groups[dStr].length} جلسات)</div>
-        <div>${groups[dStr].map(s => renderSessionCardHtml(s)).join('')}</div>
-      </div>`).join('');
+    elements.planViewWeekContainer.innerHTML = Object.keys(groups).sort().map(dStr => {
+      const dObj = store.parseLocalDate(dStr);
+      const dayId = store.getDayIdFromDate(dObj);
+      const dayName = store.DAYS.find(d => d.id === dayId)?.name || '';
+      return `
+        <div class="agenda-day-group">
+          <div class="agenda-date-heading">📅 ${dayName} (${dStr}) — ${groups[dStr].length} جلسات</div>
+          <div>${groups[dStr].map(s => renderSessionCardHtml(s)).join('')}</div>
+        </div>`;
+    }).join('');
   }
 
   function renderSessionCardHtml(sess) {
@@ -1037,7 +1058,6 @@
     }
   });
 
-  // تسجيل الإنجاز الجزئي
   elements.formPartialComplete?.addEventListener('submit', (e) => {
     e.preventDefault();
     if (!pendingPartialSessionId) return;
@@ -1046,14 +1066,12 @@
     renderStudyPlanUI();
   });
 
-  // تفعيل حفظ تعديل توقيت الجلسة يدوياً
   elements.formEditSessionTime?.addEventListener('submit', (e) => {
     e.preventDefault();
     if (!pendingEditSessionId) return;
     const date = elements.inputEditSessionDate.value;
     const start = elements.inputEditSessionStart.value;
     const end = elements.inputEditSessionEnd.value;
-
     const res = store.editSessionTime(pendingEditSessionId, date, start, end);
     if (!res.success) {
       alert(res.error);

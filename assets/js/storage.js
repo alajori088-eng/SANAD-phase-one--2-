@@ -1,6 +1,6 @@
 /**
- * سند الطالب | SANAD — وحدة البيانات والتخزين والمحرك المشترك (v4 المحدّث)
- * معالجة القيود الكاملة (الفترات الممنوعة، وقت الانتقال، خوارزميات المذاكرة)
+ * سند الطالب | SANAD — وحدة البيانات والتخزين والمحرك المشترك (v4 النهائي)
+ * معالجة القيود الكاملة، منع الأخطاء الحسابية، وحظر التعارضات المزدوجة
  */
 
 (function (window) {
@@ -162,6 +162,7 @@
 
   let state = createDefaultState();
   let isCorrupted = false;
+  let corruptionDetails = null;
 
   function validateSchema(data) {
     if (!data || typeof data !== 'object') return false;
@@ -203,9 +204,17 @@
         isCorrupted = false;
         return { success: true, isNew: true };
       }
-      let parsed = JSON.parse(raw);
+      let parsed;
+      try {
+        parsed = JSON.parse(raw);
+      } catch (e) {
+        isCorrupted = true;
+        corruptionDetails = 'تعذر قراءة البيانات المحفوظة بصيغة JSON صحيحة.';
+        return { success: false, corrupted: true };
+      }
       if (!validateSchema(parsed)) {
         isCorrupted = true;
+        corruptionDetails = 'بنية البيانات السابقة غير متطابقة مع الإصدار الحالي.';
         return { success: false, corrupted: true };
       }
       state = migrateData(parsed);
@@ -214,17 +223,18 @@
       return { success: true, data: state };
     } catch (e) {
       isCorrupted = true;
+      corruptionDetails = 'تعذر الوصول إلى مساحة التخزين في المتصفح.';
       return { success: false, error: e.message };
     }
   }
 
   function save() {
-    if (isCorrupted) return { success: false };
+    if (isCorrupted) return { success: false, error: 'تم تجميد الحفظ لحماية البيانات من التلف.' };
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
       return { success: true };
     } catch (err) {
-      return { success: false };
+      return { success: false, error: 'تعذر الحفظ في مساحة التخزين المحلية.' };
     }
   }
 
@@ -256,6 +266,7 @@
     return { success: true, course: newCourse };
   }
 
+  // طرد أشباح المحاضرات والمهام عند حذف المادة
   function deleteCourse(id) {
     state.courses = state.courses.filter(c => c.id !== id);
     state.topics = state.topics.filter(t => t.courseId !== id);
@@ -263,6 +274,18 @@
     state.sections = state.sections.filter(s => s.courseId !== id);
     state.studyPlan.tasks = state.studyPlan.tasks.filter(t => t.courseId !== id);
     state.studyPlan.sessions = state.studyPlan.sessions.filter(s => s.courseId !== id);
+
+    // تنظيف الجدول المحفوظ فوراً من شُعب هذه المادة
+    if (state.savedSchedule && state.savedSchedule.schedule && Array.isArray(state.savedSchedule.schedule.sections)) {
+      const remainingSections = state.savedSchedule.schedule.sections.filter(s => s.courseId !== id);
+      if (remainingSections.length === 0) {
+        state.savedSchedule = null;
+      } else {
+        state.savedSchedule.schedule = evaluateSchedule(remainingSections);
+        state.savedSchedule.savedAt = Date.now();
+      }
+    }
+
     return save();
   }
 
@@ -275,11 +298,21 @@
       courseId: topicData.courseId,
       title: title,
       status: topicData.status || 'not_started',
-      createdAt: Date.now()
+      createdAt: Date.now(),
+      updatedAt: Date.now()
     };
     state.topics.push(newTopic);
     save();
     return { success: true, topic: newTopic };
+  }
+
+  function updateTopic(id, topicData) {
+    const topic = state.topics.find(t => t.id === id);
+    if (!topic) return { success: false, error: 'الموضوع غير موجود.' };
+    if (topicData.title !== undefined) topic.title = String(topicData.title).trim();
+    if (topicData.status !== undefined && TOPIC_STATUSES[topicData.status]) topic.status = topicData.status;
+    topic.updatedAt = Date.now();
+    return save();
   }
 
   function deleteTopic(id) {
@@ -341,7 +374,6 @@
     return state.sections.some(s => s.updatedAt > savedTime);
   }
 
-  // محرك توليد الجداول بعد إصلاح الفترات الممنوعة ووقت الانتقال
   function generateSchedules(selectedCourseIds) {
     if (!selectedCourseIds || selectedCourseIds.length === 0) return { success: false, error: 'اختر مادة واحدة على الأقل.' };
     const constraints = state.scheduleConstraints;
@@ -375,17 +407,16 @@
           const sMin = timeToMinutes(meeting.startTime);
           const eMin = timeToMinutes(meeting.endTime);
 
-          // 1. فحص وقت البداية والنهاية واليوم المحظور
           if (sMin < earliestMin || eMin > latestMin) {
-            detectedConflicts.add(`مادة "${course.name}" تقع خارج حدود وقت الدوام المسموح.`);
+            detectedConflicts.add(`مادة "${course.name}" تقع خارج أوقات الدوام المسموح.`);
             valid = false; break;
           }
           if (constraints.forbiddenDays.includes(meeting.day)) {
-            detectedConflicts.add(`مادة "${course.name}" تقع في يوم محظور حضورك فيه.`);
+            detectedConflicts.add(`مادة "${course.name}" تقع في يوم ممنوع الحضور فيه.`);
             valid = false; break;
           }
 
-          // 2. فحص الفترات الممنوعة (Blocked Times)
+          // فحص الفترات الممنوعة (Blocked Times)
           for (const blk of constraints.blockedTimes) {
             if (blk.day === meeting.day) {
               const bStart = timeToMinutes(blk.startTime);
@@ -398,7 +429,7 @@
           }
           if (!valid) break;
 
-          // 3. فحص التعارض مع المحاضرات الأخرى ووقت الانتقال
+          // فحص التعارض ووقت الانتقال بين المحاضرات
           for (const exSec of current) {
             const exCourse = getCourse(exSec.courseId);
             for (const exM of exSec.meetings) {
@@ -406,13 +437,12 @@
                 const exS = timeToMinutes(exM.startTime);
                 const exE = timeToMinutes(exM.endTime);
                 if (Math.max(sMin, exS) < Math.min(eMin, exE)) {
-                  detectedConflicts.add(`تعارض في اليوم (${meeting.day}) بين "${course.name}" و "${exCourse ? exCourse.name : 'مادة أخرى'}".`);
+                  detectedConflicts.add(`تعارض في اليوم (${meeting.day}) بين "${course.name}" و "${exCourse ? exCourse.name : ''}".`);
                   valid = false; break;
                 }
-                // تطبيق وقت الانتقال بين المحاضرات الوجاهية
                 if (constraints.travelBuffer > 0 && meeting.type === 'in_person' && exM.type === 'in_person') {
                   if ((eMin <= exS && exS < eMin + constraints.travelBuffer) || (exE <= sMin && sMin < exE + constraints.travelBuffer)) {
-                    detectedConflicts.add(`وقت انتقال غير كافٍ (${constraints.travelBuffer} دقيقة) بين "${course.name}" و "${exCourse ? exCourse.name : ''}".`);
+                    detectedConflicts.add(`وقت انتقال غير كافٍ بين "${course.name}" و "${exCourse ? exCourse.name : ''}".`);
                     valid = false; break;
                   }
                 }
@@ -432,7 +462,7 @@
     }
 
     backtrack(0, []);
-    if (validSchedules.length === 0) return { success: false, conflicts: Array.from(detectedConflicts), error: 'تعذر تكوين جدول خالي من التعارضات وفق قيودك الحالية.' };
+    if (validSchedules.length === 0) return { success: false, conflicts: Array.from(detectedConflicts), error: 'تعذر تكوين جدول خالٍ من التعارضات وفق قيودك الحالية.' };
     return { success: true, schedules: validSchedules.slice(0, 3) };
   }
 
@@ -686,25 +716,33 @@
     return { success: true, sessions: state.studyPlan.sessions, deficit: deficitReport };
   }
 
+  // حل الكارثة الحسابية بخصم الفرق الفعلي فقط
   function markSessionComplete(sessionId, completedMinutes = null) {
     const sess = state.studyPlan.sessions.find(s => s.id === sessionId);
     if (!sess) return { success: false };
     const task = state.studyPlan.tasks.find(t => t.id === sess.taskId);
     const full = sess.durationMinutes;
+    const prevCompleted = sess.completedMinutes || 0;
 
     if (completedMinutes === null || completedMinutes >= full) {
       sess.status = 'completed';
       sess.completedMinutes = full;
-      if (task) task.remainingMinutes = Math.max(0, task.remainingMinutes - full);
+      const newlyDeducted = full - prevCompleted;
+      if (task && newlyDeducted > 0) {
+        task.remainingMinutes = Math.max(0, task.remainingMinutes - newlyDeducted);
+      }
     } else {
-      sess.status = 'partial';
-      sess.completedMinutes = completedMinutes;
-      if (task) task.remainingMinutes = Math.max(0, task.remainingMinutes - completedMinutes);
+      const comp = Math.max(0, parseInt(completedMinutes, 10) || 0);
+      sess.status = comp > 0 ? 'partial' : 'pending';
+      sess.completedMinutes = comp;
+      const newlyDeducted = comp - prevCompleted;
+      if (task && newlyDeducted > 0) {
+        task.remainingMinutes = Math.max(0, task.remainingMinutes - newlyDeducted);
+      }
     }
     return save();
   }
 
-  // منع تضخيم رصيد الدقائق عند التأجيل
   function postponeSession(sessionId) {
     const sessIndex = state.studyPlan.sessions.findIndex(s => s.id === sessionId);
     if (sessIndex === -1) return { success: false };
@@ -719,7 +757,7 @@
     return save();
   }
 
-  // تعديل موعد الجلسة يدوياً
+  // منع حجز جلستي مذاكرة في نفس الوقت يدوياً
   function editSessionTime(sessionId, newDate, newStart, newEnd) {
     const sess = state.studyPlan.sessions.find(s => s.id === sessionId);
     if (!sess) return { success: false, error: 'الجلسة غير موجودة.' };
@@ -732,7 +770,7 @@
 
     if (task && task.examDate) {
       if (newDate > task.examDate || (newDate === task.examDate && eMin > timeToMinutes(task.examTime || '23:59'))) {
-        return { success: false, error: 'لا يمكن تحديد موعد الجلسة بعد موعد الامتحان.' };
+        return { success: false, error: 'لا يمكن تحديد موعد الجلسة بعد موعد الامتحان المحدد.' };
       }
     }
 
@@ -742,6 +780,17 @@
       for (const lec of lectures) {
         if (Math.max(sMin, lec.startMin) < Math.min(eMin, lec.endMin)) {
           return { success: false, error: `يتعارض هذا التوقيت مع محاضرة "${lec.courseName}".` };
+        }
+      }
+    }
+
+    // فحص التعارض مع جلسات المذاكرة الأخرى
+    for (const other of state.studyPlan.sessions) {
+      if (other.id !== sessionId && other.date === newDate) {
+        const oS = timeToMinutes(other.startTime);
+        const oE = timeToMinutes(other.endTime);
+        if (Math.max(sMin, oS) < Math.min(eMin, oE)) {
+          return { success: false, error: `يتعارض هذا التوقيت مع جلسة مذاكرة أخرى: "${other.topicTitle}" (${other.startTime} - ${other.endTime}).` };
         }
       }
     }
@@ -772,14 +821,16 @@
     return { courses, count: courses.length };
   }
 
-  // تصدير واجهة الدوال بالكامل
+  // تصدير واجهة الدوال كاملة
   window.SanadStore = {
     load, save,
+    isCorrupted: () => isCorrupted,
+    getCorruptionDetails: () => corruptionDetails,
     DAYS, MAJORS, TOPIC_STATUSES, CLASSIFICATIONS, RESOURCE_TYPES,
     formatLocalDate, parseLocalDate, getDayIdFromDate, escapeHtml,
     getStudent, setStudent,
     getCourses, getCourse, addCourse, deleteCourse,
-    getTopicsByCourse, addTopic, deleteTopic,
+    getTopicsByCourse, addTopic, updateTopic, deleteTopic,
     getResourcesByTopic, addResource, deleteResource,
     getSections, getSectionsByCourse, addSection, deleteSection,
     getScheduleConstraints, setScheduleConstraints, addBlockedTime, deleteBlockedTime,
