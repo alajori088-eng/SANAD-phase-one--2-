@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>سند الطالب | SANAD — كلية الذكاء الاصطناعي</title>
+  <meta name="description" content="منصة دراسية تقنية هادئة لخدمة طلاب كلية الذكاء الاصطناعي في جامعة البلقاء التطبيقية.">
+  <link rel="stylesheet" href="./assets/css/styles.css">
+</head>
+<body>
+
+  <!-- رابط التخطي للوصول السريع -->
+  <a href="#main-content" class="skip-link">الانتقال إلى المحتوى الرئيسي</a>
+
+  <!-- الشريط العلوي -->
+  <header class="site-header">
+    <div class="container header-inner">
+      <a href="./index.html" class="brand">
+        <span class="brand-name">سند الطالب</span>
+        <span class="brand-tag">[SANAD]</span>
+      </a>
+
+      <button type="button" class="menu-toggle" id="menu-toggle" aria-expanded="false" aria-controls="main-nav" aria-label="تبديل القائمة">
+        ☰
+      </button>
+
+      <nav class="main-nav" id="main-nav" aria-label="التنقل الرئيسي">
+        <ul class="nav-links">
+          <li><a href="#hero" class="nav-link">الرئيسية</a></li>
+          <li><a href="#my-courses" class="nav-link">تخصصي وموادي</a></li>
+          <li><a href="#majors" class="nav-link">التخصصات</a></li>
+          <li><a href="#tools" class="nav-link">الأدوات</a></li>
+          <li><a href="#about" class="nav-link">عن سند</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main-content" class="container" tabindex="-1">
+
+    <!-- تنبيه البيانات التالفة (مخفي افتراضياً ولا يظهر إلا عند وجود تلف حقيقي) -->
+    <div id="corrupted-data-banner" class="alert-banner" style="display: none;" role="alert">
+      <span>⚠️</span>
+      <div>
+        <strong>تنبيه بخصوص البيانات المحفوظة:</strong>
+        <p id="corruption-message" style="font-size: 0.9rem; margin-top: 4px;"></p>
+        <span style="font-size: 0.8rem; color: #FDE68A;">لم يتم مسح بياناتك أو استبدالها بصمت لحمايتها من الفقدان.</span>
+      </div>
+    </div>
+
+    <!-- قسم الترحيب والبحث الشامل -->
+    <section id="hero" class="hero-section" aria-labelledby="hero-heading">
+      <div class="hero-pre">كلية الذكاء الاصطناعي • جامعة البلقاء التطبيقية</div>
+      <h1 id="hero-heading" class="hero-title">
+        مساحة دراسية تقنية هادئة تمكّنك من <span>تنظيم مسارك الأكاديمي</span>
+      </h1>
+      <p class="hero-desc">
+        مبادرة طلابية مستقلة لمساعدة طلاب الكلية في توثيق موادهم، متابعة إنجازهم للموضوعات، والوصول إلى أفضل المصادر الدراسية الموثوقة.
+      </p>
+
+      <div class="hero-actions">
+        <a href="#my-courses" class="btn btn-primary">ابدأ بتنظيم موادك الآن</a>
+        <a href="#majors" class="btn btn-secondary">استعراض تخصصات الكلية</a>
+      </div>
+
+      <!-- البحث الشامل في المواد والموضوعات والمصادر -->
+      <div class="global-search-wrapper">
+        <div class="search-input-box">
+          <input type="search" id="global-search-input" placeholder="ابحث بالاسم أو الرمز في المواد، الموضوعات، والمصادر..." autocomplete="off">
+          <span style="color: var(--color-muted);">🔍</span>
+        </div>
+        <div id="search-results-panel" class="search-results-panel" role="region" aria-live="polite"></div>
+      </div>
+    </section>
+
+    <!-- شريط بيانات الطالب والتخزين المحلي -->
+    <section class="student-bar" aria-label="بيانات الطالب">
+      <div class="student-info">
+        <div class="student-name" id="student-greeting">مساحة دراستك في كلية الذكاء الاصطناعي</div>
+        <div class="student-tags">
+          <span class="tag-badge" id="student-major-badge" style="display:none;"></span>
+          <span class="tag-badge" id="student-plan-badge" style="display:none;"></span>
+        </div>
+      </div>
+
+      <div style="display: flex; align-items: center; gap: var(--space-md); flex-wrap: wrap;">
+        <span class="storage-privacy-note">
+          🔒 بياناتك محفوظة محلياً في هذا المتصفح فقط
+        </span>
+        <button type="button" class="btn btn-secondary btn-sm" id="btn-edit-profile">
+          تعديل بياناتي
+        </button>
+      </div>
+    </section>
+
+    <!-- قسم «تخصصي وموادي» -->
+    <section id="my-courses" class="courses-section" aria-labelledby="courses-heading">
+      <div class="section-header">
+        <div class="section-pre">الأداة الأولى المفعلة</div>
+        <h2 id="courses-heading" class="section-title">تخصصي وموادي</h2>
+      </div>
+
+      <!-- واجهة قائمة المواد وشريط الأدوات -->
+      <div id="courses-list-view">
+        <div class="courses-toolbar">
+          <div class="toolbar-row">
+            <div class="filter-group">
+              <input type="search" id="course-search-input" class="form-input" placeholder="بحث بالاسم أو الرمز..." style="width: 220px;">
+              <select id="major-filter" class="filter-select" aria-label="تصفية بالتخصص">
+                <option value="">جميع التخصصات</option>
+                <option value="ai_robotics">الذكاء الاصطناعي والروبوتات</option>
+                <option value="data_science">علم البيانات والذكاء الاصطناعي</option>
+                <option value="cyber_security">الأمن السيبراني</option>
+                <option value="software_eng">هندسة البرمجيات</option>
+                <option value="computer_science">علم الحاسوب</option>
+              </select>
+              <select id="year-filter" class="filter-select" aria-label="تصفية بالسنة">
+                <option value="">جميع السنوات</option>
+                <option value="1">السنة الأولى</option>
+                <option value="2">السنة الثانية</option>
+                <option value="3">السنة الثالثة</option>
+                <option value="4">السنة الرابعة</option>
+              </select>
+              <select id="semester-filter" class="filter-select" aria-label="تصفية بالفصل">
+                <option value="">جميع الفصول</option>
+                <option value="1">الفصل الأول</option>
+                <option value="2">الفصل الثاني</option>
+                <option value="summer">الفصل الصيفي</option>
+              </select>
+              <select id="class-filter" class="filter-select" aria-label="تصفية بالتصنيف">
+                <option value="">جميع التصنيفات</option>
+                <option value="univ_req">متطلب جامعة</option>
+                <option value="college_req">متطلب كلية</option>
+                <option value="major_req">متطلب تخصص</option>
+                <option value="elective">مادة اختيارية</option>
+                <option value="unspecified">غير محدد</option>
+              </select>
+            </div>
+
+            <button type="button" class="btn btn-primary" id="btn-open-add-course">
+              + إضافة مادة جديدة
+            </button>
+          </div>
+
+          <div class="toolbar-row">
+            <div class="filter-group">
+              <button type="button" class="toggle-filter-btn" id="filter-current-btn">
+                📅 مواد هذا الفصل فقط
+              </button>
+              <button type="button" class="toggle-filter-btn" id="filter-fav-btn">
+                ★ المواد المفضلة فقط
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- شبكة بطاقات المواد -->
+        <div id="courses-grid" class="courses-grid"></div>
+      </div>
+
+      <!-- واجهة تفاصيل المادة (صفحة المادة المنفردة) -->
+      <div id="course-details-view" class="course-details-view">
+        <button type="button" class="details-nav-back" id="btn-back-to-courses">
+          ← العودة إلى قائمة المواد
+        </button>
+
+        <div class="details-header">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: var(--space-md);">
+            <div>
+              <span class="course-code" id="detail-course-code">AI101</span>
+              <h3 class="course-title" id="detail-course-name" style="font-size: 1.8rem; margin-top: 8px;">اسم المادة</h3>
+              <div class="course-meta" style="margin-top: 8px;">
+                <span class="badge-meta" id="detail-course-class">متطلب كلية</span>
+                <span class="badge-meta" id="detail-course-hours">3 ساعات</span>
+              </div>
+            </div>
+            <div style="display: flex; gap: var(--space-sm);">
+              <button type="button" class="btn btn-secondary btn-sm" id="btn-edit-current-course">تعديل بيانات المادة</button>
+              <button type="button" class="btn btn-primary btn-sm" id="btn-open-add-topic">+ إضافة موضوع جديد</button>
+            </div>
+          </div>
+
+          <div class="manual-input-notice">
+            <span>ℹ️</span>
+            <span>تنبيه: هذه المعلومات مدخلة يدويًا بواسطة الطالب وليست خطة رسمية معتمدة من الكلية.</span>
+          </div>
+
+          <p id="detail-course-desc" class="details-desc-box"></p>
+        </div>
+
+        <div class="topics-container">
+          <div class="topics-header">
+            <h4 style="font-size: 1.3rem; color: var(--color-text);">موضوعات المادة ومصادرها</h4>
+          </div>
+          <div id="detail-topics-list" class="topics-list"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- بطاقات التخصصات الخمسة التعريفية -->
+    <section id="majors" class="majors-section" aria-labelledby="majors-heading">
+      <div class="section-header">
+        <div class="section-pre">الكلية والبرامج</div>
+        <h2 id="majors-heading" class="section-title">تخصصات كلية الذكاء الاصطناعي</h2>
+      </div>
+      <div class="cards-grid">
+        <article class="info-card">
+          <h3>الذكاء الاصطناعي والروبوتات</h3>
+          <p>يركز على بناء الأنظمة الذكية، تعلم الآلة، الرؤية الحاسوبية، والتحكم في النظم الروبوتية المتقدمة.</p>
+        </article>
+        <article class="info-card">
+          <h3>علم البيانات والذكاء الاصطناعي</h3>
+          <p>يهتم بتحليل واستخراج الأنماط من البيانات الضخمة وبناء النماذج التنبؤية لدعم اتخاذ القرارات الذكية.</p>
+        </article>
+        <article class="info-card">
+          <h3>الأمن السيبراني</h3>
+          <p>يتناول حماية الشبكات، الأنظمة، ومصادر البيانات من التهديدات الرقمية والهجمات السيبرانية واختبار الاختراق.</p>
+        </article>
+        <article class="info-card">
+          <h3>هندسة البرمجيات</h3>
+          <p>يختص بهندسة وتطوير دورة حياة البرمجيات المعقدة، جودة الأنظمة، وإدارة المشروعات البرمجية المتقدمة.</p>
+        </article>
+        <article class="info-card">
+          <h3>علم الحاسوب</h3>
+          <p>الأساس النظري والعملي للحوسبة، الخوارزميات، بنية الحواسيب، والبرمجة منخفضة وعالية المستوى.</p>
+        </article>
+      </div>
+    </section>
+
+    <!-- بطاقات الأدوات المتبقية للمراحل اللاحقة -->
+    <section id="tools" class="tools-section" aria-labelledby="tools-heading">
+      <div class="section-header">
+        <div class="section-pre">أدوات الطالب</div>
+        <h2 id="tools-heading" class="section-title">حزمة أدوات سند</h2>
+      </div>
+      <div class="cards-grid">
+        <article class="info-card" style="border-color: var(--color-primary);">
+          <span class="tag-badge" style="margin-bottom: 8px;">مفعلة بالكامل (المرحلة الحالية)</span>
+          <h3>تخصصي وموادي</h3>
+          <p>دليل المواد المخصص، تتبع إنجاز الموضوعات، وإدارة الروابط والمصادر الموثوقة محلياً.</p>
+        </article>
+        <article class="info-card">
+          <span class="tag-badge" style="margin-bottom: 8px; background: rgba(255,255,255,0.05); color: var(--color-muted); border-color: var(--color-border);">المرحلة القادمة</span>
+          <h3>حاسبة المعدل التراكمي</h3>
+          <p>حساب المعدل الفصلي والتراكمي ومحاكاة السيناريوهات المتوقعة للفصول القادمة.</p>
+        </article>
+        <article class="info-card">
+          <span class="tag-badge" style="margin-bottom: 8px; background: rgba(255,255,255,0.05); color: var(--color-muted); border-color: var(--color-border);">المرحلة القادمة</span>
+          <h3>مخطط الجدول الدراسي</h3>
+          <p>المساعدة في ترتيب الأوقات وتفادي التعارضات بين أوقات المحاضرات والمختبرات.</p>
+        </article>
+      </div>
+    </section>
+
+    <!-- تعريف المبادرة والخصوصية -->
+    <section id="about" class="about-section" aria-labelledby="about-heading">
+      <div class="section-header">
+        <div class="section-pre">عن المشروع</div>
+        <h2 id="about-heading" class="section-title">سند الطالب: مساحة مستقلة</h2>
+      </div>
+      <div class="info-card" style="line-height: 1.8;">
+        <p>
+          مشروع <strong>«سند الطالب | SANAD»</strong> هو مبادرة طلابية وتطوعية مستقلة صُممت لتقديم مساحة تقنية نظيفة وسريعة لدعم طلبة كلية الذكاء الاصطناعي بجامعة البلقاء التطبيقية. المشروع لا يدعي أي تبعية إدارية رسمية للجامعة.
+        </p>
+        <p style="margin-top: 1rem; color: var(--color-muted);">
+          <strong>سياسة الخصوصية والتخزين:</strong> لا يتطلب النظام أي تسجيل دخول أو مشاركة لمعلومات سرية. كافة المدخلات تُخزن مشفرة محلياً داخل وحدة التخزين الخاصة بمتصفحك فقط، ولا تُرفع إلى أي خادم خارجي.
+        </p>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- التذييل -->
+  <footer class="site-footer">
+    <div class="container footer-content">
+      <div>سند الطالب | SANAD — مبادرة طلابية مستقلة (المرحلة الثانية)</div>
+      <div>مصمم ليعمل محلياً وبثبات كامل دون تتبع أو اتصالات خارجية</div>
+    </div>
+  </footer>
+
+  <!-- النوافذ المنبثقة (Modals) -->
+
+  <!-- 1. نافذة الملف الشخصي -->
+  <div id="modal-profile" class="modal-backdrop" role="dialog" aria-labelledby="modal-profile-title" aria-modal="true">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 id="modal-profile-title" class="modal-title">بيانات الطالب (اختيارية)</h3>
+        <button type="button" class="icon-btn" data-dismiss="modal" aria-label="إغلاق">✕</button>
+      </div>
+      <form id="form-profile">
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="input-student-name" class="form-label">الاسم الأول</label>
+            <input type="text" id="input-student-name" class="form-input" placeholder="مثال: أحمد">
+          </div>
+          <div class="form-group">
+            <label for="select-student-major" class="form-label">التخصص</label>
+            <select id="select-student-major" class="form-select">
+              <option value="">غير محدد</option>
+              <option value="ai_robotics">الذكاء الاصطناعي والروبوتات</option>
+              <option value="data_science">علم البيانات والذكاء الاصطناعي</option>
+              <option value="cyber_security">الأمن السيبراني</option>
+              <option value="software_eng">هندسة البرمجيات</option>
+              <option value="computer_science">علم الحاسوب</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="input-student-year" class="form-label">سنة الخطة الدراسية</label>
+            <input type="text" id="input-student-year" class="form-input" placeholder="مثال: 2024">
+            <span class="form-help">تُحفظ هذه البيانات داخل متصفحك الحالي فقط ولا تتطلب أي تسجيل دخول.</span>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">إلغاء</button>
+          <button type="submit" class="btn btn-primary">حفظ التغييرات</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 2. نافذة إضافة وتعديل مادة -->
+  <div id="modal-course" class="modal-backdrop" role="dialog" aria-labelledby="modal-course-title" aria-modal="true">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 id="modal-course-title" class="modal-title">إضافة مادة جديدة</h3>
+        <button type="button" class="icon-btn" data-dismiss="modal" aria-label="إغلاق">✕</button>
+      </div>
+      <form id="form-course">
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="input-course-name" class="form-label">اسم المادة <span style="color:var(--color-danger)">*</span></label>
+            <input type="text" id="input-course-name" class="form-input" placeholder="مثال: مقدمة في الذكاء الاصطناعي" required>
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-md);">
+            <div class="form-group">
+              <label for="input-course-code" class="form-label">رمز المادة</label>
+              <input type="text" id="input-course-code" class="form-input" placeholder="مثال: AI101">
+            </div>
+            <div class="form-group">
+              <label for="input-course-hours" class="form-label">الساعات المعتمدة</label>
+              <input type="number" id="input-course-hours" class="form-input" min="0" max="6" placeholder="3">
+            </div>
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-md);">
+            <div class="form-group">
+              <label for="select-course-year" class="form-label">السنة الدراسية</label>
+              <select id="select-course-year" class="form-select">
+                <option value="">غير محدد</option>
+                <option value="1">السنة الأولى</option>
+                <option value="2">السنة الثانية</option>
+                <option value="3">السنة الثالثة</option>
+                <option value="4">السنة الرابعة</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="select-course-semester" class="form-label">الفصل الدراسي</label>
+              <select id="select-course-semester" class="form-select">
+                <option value="">غير محدد</option>
+                <option value="1">الفصل الأول</option>
+                <option value="2">الفصل الثاني</option>
+                <option value="summer">الفصل الصيفي</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="select-course-class" class="form-label">تصنيف المادة</label>
+            <select id="select-course-class" class="form-select">
+              <option value="unspecified">غير محدد</option>
+              <option value="univ_req">متطلب جامعة</option>
+              <option value="college_req">متطلب كلية</option>
+              <option value="major_req">متطلب تخصص</option>
+              <option value="elective">مادة اختيارية</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">التخصصات المرتبطة بهذه المادة</label>
+            <div class="form-checkboxes">
+              <label class="checkbox-item"><input type="checkbox" name="course-majors" value="ai_robotics"> الذكاء الاصطناعي والروبوتات</label>
+              <label class="checkbox-item"><input type="checkbox" name="course-majors" value="data_science"> علم البيانات والذكاء الاصطناعي</label>
+              <label class="checkbox-item"><input type="checkbox" name="course-majors" value="cyber_security"> الأمن السيبراني</label>
+              <label class="checkbox-item"><input type="checkbox" name="course-majors" value="software_eng"> هندسة البرمجيات</label>
+              <label class="checkbox-item"><input type="checkbox" name="course-majors" value="computer_science"> علم الحاسوب</label>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="input-course-desc" class="form-label">وصف وملاحظات عامة عن المادة</label>
+            <textarea id="input-course-desc" class="form-textarea" rows="3" placeholder="ملاحظات حول طبيعة المادة، متطلباتها، أو توصيات دراستها..."></textarea>
+          </div>
+          <div style="display:flex; gap:var(--space-md); margin-top:4px;">
+            <label class="checkbox-item">
+              <input type="checkbox" id="check-course-current"> إضافة إلى «مواد هذا الفصل»
+            </label>
+            <label class="checkbox-item">
+              <input type="checkbox" id="check-course-favorite"> إضافة للمفضلة ★
+            </label>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">إلغاء</button>
+          <button type="submit" class="btn btn-primary">حفظ المادة</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 3. نافذة إضافة وتعديل موضوع -->
+  <div id="modal-topic" class="modal-backdrop" role="dialog" aria-labelledby="modal-topic-title" aria-modal="true">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 id="modal-topic-title" class="modal-title">إضافة موضوع جديد</h3>
+        <button type="button" class="icon-btn" data-dismiss="modal" aria-label="إغلاق">✕</button>
+      </div>
+      <form id="form-topic">
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="input-topic-title" class="form-label">عنوان الموضوع <span style="color:var(--color-danger)">*</span></label>
+            <input type="text" id="input-topic-title" class="form-input" placeholder="مثال: خوارزميات البحث (Search Algorithms)" required>
+          </div>
+          <div class="form-group">
+            <label for="select-topic-status" class="form-label">حالة التقدم</label>
+            <select id="select-topic-status" class="form-select">
+              <option value="not_started">لم أبدأ</option>
+              <option value="in_progress">قيد الدراسة</option>
+              <option value="completed">مكتمل</option>
+              <option value="needs_review">بحاجة مراجعة</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="input-topic-desc" class="form-label">ملاحظات إضافية عن الموضوع</label>
+            <textarea id="input-topic-desc" class="form-textarea" rows="2" placeholder="نقاط رئيسية للتذكر أو أهداف الدراسة..."></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">إلغاء</button>
+          <button type="submit" class="btn btn-primary">حفظ الموضوع</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 4. نافذة إضافة مصدر -->
+  <div id="modal-resource" class="modal-backdrop" role="dialog" aria-labelledby="modal-resource-title" aria-modal="true">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 id="modal-resource-title" class="modal-title">إضافة مصدر للموضوع</h3>
+        <button type="button" class="icon-btn" data-dismiss="modal" aria-label="إغلاق">✕</button>
+      </div>
+      <form id="form-resource">
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="input-resource-title" class="form-label">عنوان المصدر <span style="color:var(--color-danger)">*</span></label>
+            <input type="text" id="input-resource-title" class="form-input" placeholder="مثال: ملخص شامل للفصل الثاني" required>
+          </div>
+          <div class="form-group">
+            <label for="select-resource-type" class="form-label">نوع المصدر</label>
+            <select id="select-resource-type" class="form-select">
+              <option value="summary">ملخص</option>
+              <option value="explanation">شرح / محاضرة</option>
+              <option value="practical">تدريب عملي / كود</option>
+              <option value="reference">مرجع / كتاب</option>
+              <option value="slides">سلايدات</option>
+              <option value="questions">أسئلة وتدريبات</option>
+              <option value="other">أخرى</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="input-resource-url" class="form-label">رابط المصدر (يبدأ بـ http:// أو https://) <span style="color:var(--color-danger)">*</span></label>
+            <input type="url" id="input-resource-url" class="form-input" placeholder="https://example.com/notes.pdf" required>
+            <span class="form-help">ملاحظة: هذا النظام يحفظ الروابط الخارجية التي تضيفها ولا يدعم رفع الملفات.</span>
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-md);">
+            <div class="form-group">
+              <label for="input-resource-source" class="form-label">اسم المصدر / الأستاذ</label>
+              <input type="text" id="input-resource-source" class="form-input" placeholder="مثال: منصة كذا / د. فلان">
+            </div>
+            <div class="form-group">
+              <label for="input-resource-date" class="form-label">تاريخ التحديث</label>
+              <input type="date" id="input-resource-date" class="form-input">
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">إلغاء</button>
+          <button type="submit" class="btn btn-primary">إضافة الرابط</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 5. نافذة تأكيد الحذف التنبيهية -->
+  <div id="modal-delete-confirm" class="modal-backdrop" role="dialog" aria-labelledby="modal-delete-title" aria-modal="true">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 id="modal-delete-title" class="modal-title">تأكيد الحذف</h3>
+        <button type="button" class="icon-btn" data-dismiss="modal" aria-label="إغلاق">✕</button>
+      </div>
+      <div class="modal-body">
+        <p id="delete-modal-message" style="color: var(--color-text); line-height: 1.6;"></p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">تراجع</button>
+        <button type="button" class="btn btn-danger" id="btn-confirm-delete">نعم، احذف نهائياً</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- استدعاء وحدات JavaScript بمسارات نسبية وبترتيب التبعية السليم -->
+  <script src="./assets/js/storage.js"></script>
+  <script src="./assets/js/main.js"></script>
+</body>
+</html>
