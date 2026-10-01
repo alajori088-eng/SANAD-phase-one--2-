@@ -322,6 +322,7 @@
         <article class="info-card"><h3>الذكاء الاصطناعي والروبوتات</h3><p>الأنظمة الذكية، تعلم الآلة، والتحكم بالروبوتات.</p></article>
         <article class="info-card"><h3>علم البيانات والذكاء الاصطناعي</h3><p>تحليل البيانات الضخمة وبناء النماذج التنبؤية.</p></article>
         <article class="info-card"><h3>الأمن السيبراني</h3><p>حماية الشبكات والبيانات واختبار الاختراق الرقمي.</p></article>
+        <article class="info-card"><h3>التحقيقات الجنائية الرقمية</h3><p>جمع واستخراج الأدلة الرقمية وتحليل الحوادث واستعادة البيانات والتحقيق في الجرائم الإلكترونية.</p></article>
         <article class="info-card"><h3>هندسة البرمجيات</h3><p>تصميم النظم البرمجية الكبيرة وإدارة دورة حياتها.</p></article>
         <article class="info-card"><h3>علم الحاسوب</h3><p>الخوارزميات، بنية الحواسب، والأساس النظري والعملي.</p></article>
       </div>
@@ -723,7 +724,7 @@
         <div class="modal-body">
           <div class="form-group">
             <label for="input-topic-title" class="form-label">عنوان الموضوع *</label>
-            <input type="text" id="input-topic-title" class="form-input" required>
+            <input type="text" id="input-topic-title" class="form-input" required >
           </div>
           <div class="form-group">
             <label for="select-topic-status" class="form-label">حالة الإنجاز</label>
@@ -757,8 +758,13 @@
             <input type="text" id="input-resource-title" class="form-input" placeholder="مثال: سلايدات الشابتر الأول" required>
           </div>
           <div class="form-group">
-            <label for="input-resource-url" class="form-label">رابط المصدر (URL) *</label>
-            <input type="url" id="input-resource-url" class="form-input" placeholder="https://..." required>
+            <label for="input-resource-url" class="form-label">رابط المصدر (URL) </label>
+            <input type="url" id="input-resource-url" class="form-input" placeholder="https://..." >
+            <!-- حقل إضافة الملفات بجميع أنواعها -->
+<div class="form-group">
+    <label for="input-resource-file" class="form-label">إضافة ملفات (PDF, Word, PowerPoint, Excel, TXT)</label>
+    <input type="file" id="input-resource-file" class="form-input" accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.txt,.zip,.rar" multiple>
+</div>
           </div>
           <div class="form-group">
             <label for="select-resource-type" class="form-label">نوع المصدر</label>
