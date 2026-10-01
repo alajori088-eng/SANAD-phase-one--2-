@@ -1,6 +1,6 @@
 /**
- * سند الطالب | SANAD — وحدة البيانات والتخزين والمحرك المشترك (v4 النهائي المكتمل)
- * دعم كامل للتوثيق التلقائي، دمج المراجعات، وأوقات الفراغ المرنة
+ * سند الطالب | SANAD — وحدة البيانات والتخزين والمحرك المشترك (v4 المستقر)
+ * دعم كامل للتوثيق التلقائي، دمج المراجعات، وشجرة المتطلبات التفاعلية الحية
  */
 
 (function (window) {
@@ -21,6 +21,7 @@
   ];
 
   const MAJORS = [
+    { id: 'digital_forensics', name: 'التحقيقات الجنائية الرقمية' },
     { id: 'ai_robotics', name: 'الذكاء الاصطناعي والروبوتات' },
     { id: 'data_science', name: 'علم البيانات والذكاء الاصطناعي' },
     { id: 'cyber_security', name: 'الأمن السيبراني' },
@@ -53,6 +54,58 @@
     other: 'أخرى'
   };
 
+  // بيانات شجرة تخصص التحقيقات الجنائية الرقمية مستخرجة بدقة من الخطة الرسمية
+  const CURRICULUM_DATA = {
+    digital_forensics: [
+      // السنة الأولى (المستوى 1)
+      { id: 'cs_skills_1', name: 'مهارات الحاسوب والتعليم الإلكتروني', hours: 3, level: 1, prereq: [], coreq: ['cs_skills_2'], hasLab: false },
+      { id: 'cs_skills_2', name: 'مهارات الحاسوب (2) علمية (مختبر ++C)', hours: 3, level: 1, prereq: [], coreq: ['cs_skills_1'], hasLab: true },
+      { id: 'calc_1', name: 'التفاضل والتكامل (1)', hours: 3, level: 1, prereq: [], coreq: [], hasLab: false },
+      { id: 'unix_intro', name: 'مقدمة إلى يونكس', hours: 3, level: 1, prereq: [], coreq: [], hasLab: false },
+      { id: 'digital_logic', name: 'تصميم المنطق الرقمي', hours: 3, level: 1, prereq: [], coreq: [], hasLab: true },
+      { id: 'ar_app', name: 'لغة عربية تطبيقية', hours: 3, level: 1, prereq: [], coreq: [], hasLab: false },
+      { id: 'en_app_1', name: 'لغة إنجليزية تطبيقية (1)', hours: 3, level: 1, prereq: [], coreq: [], hasLab: false },
+
+      // السنة الثانية (المستوى 2)
+      { id: 'oop', name: 'البرمجة الموجهة للكائنات', hours: 3, level: 2, prereq: ['cs_skills_2'], coreq: [], hasLab: true },
+      { id: 'sec_foundations', name: 'مبادئ أمن المعلومات والفضاء الإلكتروني', hours: 3, level: 2, prereq: ['cs_skills_2'], coreq: [], hasLab: false },
+      { id: 'calc_2', name: 'التفاضل والتكامل (2)', hours: 3, level: 2, prereq: ['calc_1'], coreq: [], hasLab: false },
+      { id: 'discrete_math', name: 'الهياكل والرياضيات المنفصلة', hours: 3, level: 2, prereq: ['calc_1'], coreq: [], hasLab: false },
+      { id: 'prob_stat', name: 'الاحتمالات والإحصاء', hours: 3, level: 2, prereq: ['calc_1'], coreq: [], hasLab: false },
+      { id: 'en_app_2', name: 'لغة إنجليزية تطبيقية (2)', hours: 3, level: 2, prereq: ['en_app_1'], coreq: [], hasLab: false },
+      { id: 'os_df', name: 'نظم التشغيل للتحقيقات الجنائية', hours: 3, level: 2, prereq: ['unix_intro', 'digital_logic'], coreq: [], hasLab: false },
+
+      // السنة الثالثة (المستوى 3)
+      { id: 'data_structures', name: 'هياكل بيانات', hours: 3, level: 3, prereq: ['oop'], coreq: [], hasLab: false },
+      { id: 'net_1', name: 'شبكات الحاسوب 1', hours: 3, level: 3, prereq: ['sec_foundations'], coreq: [], hasLab: true },
+      { id: 'crypto_intro', name: 'أساسيات التشفير', hours: 3, level: 3, prereq: ['sec_foundations'], coreq: [], hasLab: false },
+      { id: 'ai_intro', name: 'مقدمة في الذكاء الاصطناعي', hours: 3, level: 3, prereq: ['discrete_math'], coreq: [], hasLab: false },
+      { id: 'df_os', name: 'التحقيقات الرقمية لأنظمة التشغيل', hours: 3, level: 3, prereq: ['os_df'], coreq: [], hasLab: false },
+      { id: 'db_1', name: 'تصميم وإدارة قواعد البيانات (1)', hours: 3, level: 3, prereq: ['data_structures'], coreq: [], hasLab: true },
+      { id: 'algorithms', name: 'تصميم وتحليل الخوارزميات', hours: 3, level: 3, prereq: ['data_structures'], coreq: [], hasLab: true },
+      { id: 'net_sec', name: 'أمن شبكات', hours: 3, level: 3, prereq: ['net_1'], coreq: [], hasLab: true },
+
+      // السنة الرابعة والتخصصي المتقدم (المستوى 4)
+      { id: 'data_recovery', name: 'استعادة البيانات', hours: 3, level: 4, prereq: ['df_os'], coreq: [], hasLab: true },
+      { id: 'df_networks', name: 'تحقيقات جنائية في الشبكات', hours: 3, level: 4, prereq: ['net_sec'], coreq: [], hasLab: false },
+      { id: 'df_databases', name: 'تحقيقات جنائية قواعد البيانات', hours: 3, level: 4, prereq: ['db_1'], coreq: [], hasLab: false },
+      { id: 'df_privacy', name: 'خصوصية وحماية بيانات', hours: 3, level: 4, prereq: ['crypto_intro'], coreq: [], hasLab: false },
+      { id: 'ml_intro', name: 'تعلم الآلة', hours: 3, level: 4, prereq: ['ai_intro', 'prob_stat'], coreq: [], hasLab: true },
+      { id: 'ai_prog', name: 'برمجة الذكاء الاصطناعي', hours: 3, level: 4, prereq: ['ai_intro'], coreq: [], hasLab: false },
+      { id: 'df_mobile', name: 'تحقيقات الأجهزة النقالة', hours: 3, level: 4, prereq: ['df_networks'], coreq: [], hasLab: false },
+      { id: 'df_justice', name: 'التحقيقات الجنائية الرقمية والعدالة', hours: 3, level: 4, prereq: ['df_networks'], coreq: [], hasLab: false },
+      { id: 'df_fraud', name: 'تدقيق الاحتيال الرقمي', hours: 3, level: 4, prereq: ['df_networks'], coreq: [], hasLab: false, isElective: true },
+
+      // مواد تخصص اختيارية وتشريعية
+      { id: 'law_intro', name: 'مدخل إلى علم قانون', hours: 3, level: 4, prereq: [], coreq: [], hasLab: false, isElective: true },
+      { id: 'penal_code', name: 'قانون العقوبات قسم عام', hours: 3, level: 4, prereq: ['law_intro'], coreq: [], hasLab: false, isElective: true },
+      { id: 'cyber_crime_laws', name: 'القوانين الوطنية للجرائم الإلكترونية', hours: 3, level: 4, prereq: ['df_os'], coreq: [], hasLab: false, isElective: true },
+      { id: 'threats_counter', name: 'التهديدات الأمنية ومكافحتها', hours: 3, level: 4, prereq: ['df_os'], coreq: [], hasLab: false, isElective: true },
+      { id: 'sec_policies', name: 'تحليل مخاطر السياسات الأمنية', hours: 3, level: 4, prereq: ['df_databases'], coreq: [], hasLab: false, isElective: true },
+      { id: 'it_crimes', name: 'جرائم تكنولوجيا المعلومات', hours: 3, level: 4, prereq: ['df_databases'], coreq: [], hasLab: false, isElective: true }
+    ]
+  };
+
   function formatLocalDate(d) {
     const year = d.getFullYear();
     const month = String(d.getMonth() + 1).padStart(2, '0');
@@ -78,11 +131,12 @@
 
     return {
       schemaVersion: SCHEMA_VERSION,
-      student: { firstName: '', majorId: '', planYear: '' },
+      student: { firstName: '', majorId: 'digital_forensics', planYear: '2023' },
       courses: [],
       topics: [],
       resources: [],
       sections: [],
+      passedCurriculumCourses: [], // المواد المجتازة في شجرة المتطلبات
       scheduleConstraints: {
         earliestStart: '08:00',
         latestEnd: '18:00',
@@ -130,16 +184,6 @@
     return `${prefix}_${Date.now()}_${Math.random().toString(36).substr(2, 7)}`;
   }
 
-  function isValidHttpUrl(string) {
-    if (!string || typeof string !== 'string') return false;
-    try {
-      const url = new URL(string.trim());
-      return url.protocol === 'http:' || url.protocol === 'https:';
-    } catch (_) {
-      return false;
-    }
-  }
-
   function escapeHtml(str) {
     if (str === null || str === undefined) return '';
     return String(str)
@@ -179,6 +223,7 @@
       ...oldData,
       schemaVersion: SCHEMA_VERSION,
       sections: Array.isArray(oldData.sections) ? oldData.sections : [],
+      passedCurriculumCourses: Array.isArray(oldData.passedCurriculumCourses) ? oldData.passedCurriculumCourses : [],
       scheduleConstraints: { ...base.scheduleConstraints, ...(oldData.scheduleConstraints || {}) },
       schedulePreferences: { ...base.schedulePreferences, ...(oldData.schedulePreferences || {}) },
       savedSchedule: oldData.savedSchedule || null,
@@ -209,7 +254,7 @@
       let parsed = JSON.parse(raw);
       if (!validateSchema(parsed)) {
         isCorrupted = true;
-        corruptionDetails = 'بنية البيانات السابقة غير متطابقة مع الإصدار الحالي.';
+        corruptionDetails = 'بنية البيانات غير مطابقة.';
         return { success: false, corrupted: true };
       }
       state = migrateData(parsed);
@@ -218,18 +263,18 @@
       return { success: true, data: state };
     } catch (e) {
       isCorrupted = true;
-      corruptionDetails = 'تعذر قراءة البيانات المحفوظة في المتصفح.';
+      corruptionDetails = 'تعذر قراءة البيانات المحفوظة.';
       return { success: false, error: e.message };
     }
   }
 
   function save() {
-    if (isCorrupted) return { success: false, error: 'تم تجميد الحفظ لحماية البيانات من التلف.' };
+    if (isCorrupted) return { success: false, error: 'تم تجميد الحفظ لحماية البيانات.' };
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
       return { success: true };
     } catch (err) {
-      return { success: false, error: 'تعذر الحفظ في مساحة التخزين المحلية.' };
+      return { success: false, error: 'تعذر الحفظ في مساحة التخزين.' };
     }
   }
 
@@ -245,7 +290,7 @@
   // إدارة الطالب والمواد
   function getStudent() { return { ...state.student }; }
   function setStudent(data) {
-    state.student = { firstName: (data.firstName || '').trim(), majorId: (data.majorId || '').trim(), planYear: (data.planYear || '').trim() };
+    state.student = { firstName: (data.firstName || '').trim(), majorId: (data.majorId || 'digital_forensics').trim(), planYear: (data.planYear || '2023').trim() };
     return save();
   }
 
@@ -287,7 +332,6 @@
         state.savedSchedule.savedAt = Date.now();
       }
     }
-
     return save();
   }
 
@@ -541,7 +585,6 @@
   function getStudyPlan() { return JSON.parse(JSON.stringify(state.studyPlan)); }
   function setStudyPlanSettings(newSettings) {
     state.studyPlan.settings = { ...state.studyPlan.settings, ...newSettings };
-    // تحديث أوقات الفراغ اليومية وفق الحقول المدخلة
     if (newSettings.dailyStartTime && newSettings.dailyEndTime) {
       const dStart = newSettings.dailyStartTime;
       const dEnd = newSettings.dailyEndTime;
@@ -640,7 +683,6 @@
     const startObj = parseLocalDate(effectiveStartStr);
     const endObj = parseLocalDate(settings.endDate);
 
-    // إذا لم يحدد الطالب تاريخ الامتحان، تُدمج دقائق المراجعة تلقائياً مع ساعات الدراسة العادية
     const activeTasks = state.studyPlan.tasks
       .map(t => {
         const copy = { ...t };
@@ -846,7 +888,6 @@
       }
       task.updatedAt = Date.now();
     }
-
     return save();
   }
 
@@ -926,6 +967,62 @@
     return { totalNeededMinutes, completedMinutes, percentage: pct, tasksCount: state.studyPlan.tasks.length };
   }
 
+  // -------------------------------------------------------------
+  // منطق شجرة المتطلبات التفاعلية (Curriculum Tree Engine)
+  // -------------------------------------------------------------
+  function getCurriculumTree(majorId = 'digital_forensics') {
+    const list = CURRICULUM_DATA[majorId] || CURRICULUM_DATA.digital_forensics;
+    const passed = new Set(state.passedCurriculumCourses || []);
+
+    return list.map(item => {
+      const isPassed = passed.has(item.id);
+      let isAvailable = false;
+      let missingPrereqs = [];
+
+      if (!isPassed) {
+        missingPrereqs = (item.prereq || []).filter(pid => !passed.has(pid));
+        isAvailable = (missingPrereqs.length === 0);
+      }
+
+      return {
+        ...item,
+        status: isPassed ? 'passed' : (isAvailable ? 'available' : 'locked'),
+        missingPrereqs
+      };
+    });
+  }
+
+  function toggleCurriculumCoursePassed(courseId) {
+    if (!state.passedCurriculumCourses) state.passedCurriculumCourses = [];
+    const idx = state.passedCurriculumCourses.indexOf(courseId);
+    if (idx > -1) {
+      state.passedCurriculumCourses.splice(idx, 1);
+    } else {
+      state.passedCurriculumCourses.push(courseId);
+    }
+    save();
+    return { success: true, passed: state.passedCurriculumCourses };
+  }
+
+  function getDependentCurriculumCourses(courseId, majorId = 'digital_forensics') {
+    const list = CURRICULUM_DATA[majorId] || CURRICULUM_DATA.digital_forensics;
+    const dependents = new Set();
+
+    function findChildren(parentId) {
+      list.forEach(c => {
+        if (c.prereq && c.prereq.includes(parentId)) {
+          if (!dependents.has(c.id)) {
+            dependents.add(c.id);
+            findChildren(c.id);
+          }
+        }
+      });
+    }
+
+    findChildren(courseId);
+    return Array.from(dependents);
+  }
+
   function globalSearch(query) {
     const q = (query || '').trim().toLowerCase();
     if (!q) return { courses: [], count: 0 };
@@ -949,22 +1046,8 @@
     getStudyPlan, setStudyPlanSettings, addStudyTask, deleteStudyTask, planStudySchedule,
     markSessionComplete, postponeSession, editSessionTime,
     getStudyProgressStats, isStudyPlanScheduleOutdated,
+    getCurriculumTree, toggleCurriculumCoursePassed, getDependentCurriculumCourses,
     globalSearch
   };
 
 })(window);
-// دالة حفظ المرفقات والمصادر
-function saveResourceData(resourceData) {
-    let resources = JSON.parse(localStorage.getItem('sanad_resources') || '[]');
-    const newResource = {
-        id: Date.now(),
-        title: resourceData.title,
-        url: resourceData.url || '',
-        files: resourceData.files || [],
-        type: resourceData.type,
-        createdAt: new Date().toISOString()
-    };
-    resources.push(newResource);
-    localStorage.setItem('sanad_resources', JSON.stringify(resources));
-    return newResource;
-}

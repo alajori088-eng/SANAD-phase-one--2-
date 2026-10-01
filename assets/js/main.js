@@ -1,6 +1,6 @@
 /**
  * سند الطالب | SANAD — المحرك البرمجي الموحد والشامل (v4 النهائي المكتمل)
- * تفعيل نظام مساحة العمل (Workspace Views)، توجيه الروابط، وإدارة كاملة للأدوات
+ * تفعيل شجرة المتطلبات التفاعلية، كشف مسار الخطر، وتوجيه مساحات العمل
  */
 
 (function () {
@@ -27,6 +27,13 @@
 
     globalSearchInput: document.getElementById('global-search-input'),
     searchResultsPanel: document.getElementById('search-results-panel'),
+
+    // عناصر شجرة المتطلبات التفاعلية
+    curriculumContainer: document.getElementById('curriculum-tree-container'),
+    treePassedCount: document.getElementById('tree-passed-count'),
+    treeAvailableCount: document.getElementById('tree-available-count'),
+    treeLockedCount: document.getElementById('tree-locked-count'),
+    treeImpactBanner: document.getElementById('tree-impact-banner'),
 
     courseSearchInput: document.getElementById('course-search-input'),
     openAddCourseBtn: document.getElementById('btn-open-add-course'),
@@ -152,12 +159,13 @@
   let stagedExtractedData = [];
   let currentGeneratedSchedules = [];
   let currentActiveScheduleIndex = 0;
+  let selectedTreeCourseId = null;
 
   // =============================================================
-  // نظام مساحة العمل وتبديل الواجهات (Workspace Router)
+  // موجه مساحات العمل (Workspace Router)
   // =============================================================
   function initWorkspaceRouter() {
-    const validViews = ['hero', 'study-plan', 'schedule', 'my-courses', 'majors', 'tools', 'about'];
+    const validViews = ['hero', 'curriculum', 'study-plan', 'schedule', 'my-courses', 'majors', 'tools', 'about'];
 
     function activateView(viewId) {
       if (!validViews.includes(viewId)) viewId = 'hero';
@@ -184,6 +192,10 @@
 
       if (elements.mainNav) elements.mainNav.classList.remove('is-open');
       window.scrollTo({ top: 0, behavior: 'smooth' });
+
+      if (viewId === 'curriculum') {
+        renderCurriculumTree();
+      }
     }
 
     window.addEventListener('hashchange', () => {
@@ -205,6 +217,162 @@
     const initialHash = window.location.hash.replace('#', '') || 'hero';
     activateView(initialHash);
   }
+
+  // =============================================================
+  // شجرة المتطلبات التفاعلية (Curriculum Tree Rendering & Logic)
+  // =============================================================
+  function renderCurriculumTree() {
+    if (!elements.curriculumContainer) return;
+    const treeCourses = store.getCurriculumTree('digital_forensics');
+
+    let passedCount = 0;
+    let availableCount = 0;
+    let lockedCount = 0;
+
+    const levels = { 1: [], 2: [], 3: [], 4: [] };
+
+    treeCourses.forEach(c => {
+      if (c.status === 'passed') passedCount++;
+      else if (c.status === 'available') availableCount++;
+      else lockedCount++;
+
+      const lvl = c.level || 1;
+      if (levels[lvl]) levels[lvl].push(c);
+      else levels[4].push(c);
+    });
+
+    if (elements.treePassedCount) elements.treePassedCount.textContent = passedCount;
+    if (elements.treeAvailableCount) elements.treeAvailableCount.textContent = availableCount;
+    if (elements.treeLockedCount) elements.treeLockedCount.textContent = lockedCount;
+
+    const levelTitles = {
+      1: 'سنة أولى (المستوى التأسيسي)',
+      2: 'سنة ثانية (المستوى المتوسط)',
+      3: 'سنة ثالثة (المستوى المتقدم)',
+      4: 'سنة رابعة والتخصصي'
+    };
+
+    let dependents = [];
+    if (selectedTreeCourseId) {
+      dependents = store.getDependentCurriculumCourses(selectedTreeCourseId, 'digital_forensics');
+    }
+
+    let gridHtml = '';
+    [1, 2, 3, 4].forEach(lvl => {
+      const coursesInLevel = levels[lvl];
+      gridHtml += `
+        <div class="curriculum-level-column">
+          <div class="column-header">
+            <span>${levelTitles[lvl]}</span>
+            <span class="tag-badge">${coursesInLevel.length} مواد</span>
+          </div>
+          <div style="display:flex; flex-direction:column; gap:8px;">
+            ${coursesInLevel.map(c => {
+              const isSelected = (c.id === selectedTreeCourseId);
+              const isRisk = dependents.includes(c.id);
+
+              let statusClass = `status-${c.status}`;
+              if (isSelected) statusClass += ' is-active-source';
+              if (isRisk) statusClass += ' is-dependent-risk';
+
+              const statusBadgeText = c.status === 'passed' ? '✔ اجتزتها' : (c.status === 'available' ? '🔵 مفتوحة للتسجيل' : '🔒 مقفلة');
+
+              return `
+                <div class="tree-course-card ${statusClass}" data-tree-id="${c.id}">
+                  <div class="tree-card-title">
+                    ${store.escapeHtml(c.name)} ${c.hasLab ? '<span title="مادة بمختبر">🔬</span>' : ''} ${c.isElective ? '<span title="مادة اختيارية">⭐</span>' : ''}
+                  </div>
+                  <div class="tree-card-meta">
+                    <span>${statusBadgeText}</span>
+                    <span>${c.hours} ساعات</span>
+                  </div>
+                  ${c.missingPrereqs && c.missingPrereqs.length > 0 ? `
+                    <div style="font-size:0.75rem; color:var(--color-danger); margin-top:2px;">
+                      ينقصك: ${c.missingPrereqs.map(pid => {
+                        const pre = treeCourses.find(x => x.id === pid);
+                        return pre ? pre.name : pid;
+                      }).join('، ')}
+                    </div>
+                  ` : ''}
+                  <div class="tree-card-actions">
+                    <button type="button" class="btn btn-secondary btn-sm" data-action="toggle-curriculum-pass" data-id="${c.id}" style="padding:2px 6px; font-size:0.75rem;">
+                      ${c.status === 'passed' ? 'إلغاء الاجتياز' : '✔ اجتزتها'}
+                    </button>
+                    ${c.status === 'available' ? `
+                      <button type="button" class="btn btn-primary btn-sm" data-action="add-tree-to-my-courses" data-name="${store.escapeHtml(c.name)}" data-hours="${c.hours}" style="padding:2px 6px; font-size:0.75rem;">
+                        + لموادي
+                      </button>
+                    ` : ''}
+                  </div>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        </div>
+      `;
+    });
+
+    elements.curriculumContainer.innerHTML = gridHtml;
+
+    // عرض بانر مسار الخطر
+    if (elements.treeImpactBanner) {
+      if (selectedTreeCourseId) {
+        const selectedCourse = treeCourses.find(x => x.id === selectedTreeCourseId);
+        if (selectedCourse && dependents.length > 0) {
+          const depNames = dependents.map(id => {
+            const item = treeCourses.find(x => x.id === id);
+            return item ? item.name : id;
+          }).join(' • ');
+
+          elements.treeImpactBanner.style.display = 'block';
+          elements.treeImpactBanner.innerHTML = `
+            <strong>⚠️ كشف مسار التأثير:</strong> إذا لم تجتز مادة <strong>«${selectedCourse.name}»</strong>، ستتعطل عليك <strong>(${dependents.length}) مواد</strong> في الشجرة:<br>
+            <span style="color:var(--color-warning); font-size:0.85rem;">${depNames}</span>
+          `;
+        } else if (selectedCourse) {
+          elements.treeImpactBanner.style.display = 'block';
+          elements.treeImpactBanner.innerHTML = `
+            ℹ️ مادة <strong>«${selectedCourse.name}»</strong> لا تفتح مواد تالية مباشرة في هذا المسار.
+          `;
+        }
+      } else {
+        elements.treeImpactBanner.style.display = 'none';
+      }
+    }
+  }
+
+  // أحداث النقر داخل شجرة المتطلبات
+  document.addEventListener('click', (e) => {
+    const card = e.target.closest('.tree-course-card');
+    const passBtn = e.target.closest('[data-action="toggle-curriculum-pass"]');
+    const addBtn = e.target.closest('[data-action="add-tree-to-my-courses"]');
+
+    if (passBtn) {
+      e.stopPropagation();
+      const id = passBtn.getAttribute('data-id');
+      store.toggleCurriculumCoursePassed(id);
+      renderCurriculumTree();
+      return;
+    }
+
+    if (addBtn) {
+      e.stopPropagation();
+      const name = addBtn.getAttribute('data-name');
+      const hours = parseInt(addBtn.getAttribute('data-hours'), 10) || 3;
+      const added = store.addCourse({ name, hours, isCurrentSemester: true });
+      if (added.success) {
+        renderCourses();
+        alert(`تمت إضافة مادة «${name}» إلى قائمة تخصصي وموادي بنجاح!`);
+      }
+      return;
+    }
+
+    if (card) {
+      const treeId = card.getAttribute('data-tree-id');
+      selectedTreeCourseId = (selectedTreeCourseId === treeId) ? null : treeId;
+      renderCurriculumTree();
+    }
+  });
 
   if (store.isCorrupted() && elements.corruptedBanner && elements.corruptionMsg) {
     elements.corruptionMsg.textContent = store.getCorruptionDetails() || 'حدث خطأ في تحميل البيانات المحفوظة.';
@@ -267,8 +435,8 @@
     }
     if (elements.studentMajorBadge) {
       const majorObj = store.MAJORS.find(m => m.id === student.majorId);
-      elements.studentMajorBadge.textContent = majorObj ? majorObj.name : '';
-      elements.studentMajorBadge.style.display = majorObj ? 'inline-block' : 'none';
+      elements.studentMajorBadge.textContent = majorObj ? majorObj.name : 'التحقيقات الجنائية الرقمية';
+      elements.studentMajorBadge.style.display = 'inline-block';
     }
     if (elements.studentPlanBadge) {
       elements.studentPlanBadge.textContent = student.planYear ? `خطة سنة ${store.escapeHtml(student.planYear)}` : '';
@@ -279,7 +447,7 @@
   elements.editProfileBtn?.addEventListener('click', () => {
     const s = store.getStudent();
     document.getElementById('input-student-name').value = s.firstName || '';
-    document.getElementById('select-student-major').value = s.majorId || '';
+    document.getElementById('select-student-major').value = s.majorId || 'digital_forensics';
     document.getElementById('input-student-year').value = s.planYear || '';
     showModal(elements.profileModal);
   });
@@ -292,6 +460,7 @@
       planYear: document.getElementById('input-student-year').value
     });
     renderStudentProfile();
+    renderCurriculumTree();
     hideModal(elements.profileModal);
   });
 
@@ -357,7 +526,7 @@
       elements.coursesGrid.innerHTML = `
         <div class="info-card" style="text-align:center; grid-column: 1 / -1; padding:2rem;">
           <h4 style="color:var(--color-primary); font-size:1.1rem; margin-bottom:4px;">${searchFilter ? 'لا توجد مادة تطابق بحثك' : 'دليلك الدراسي فارغ حالياً'}</h4>
-          <p style="font-size:0.85rem; color:var(--color-muted);">${searchFilter ? 'تأكد من كتابة الاسم أو الرمز بشكل صحيح.' : 'أضف مواد خطتك للبدء بتنظيم الشعب والمصادر واستخدام أدوات الجداول والمذاكرة.'}</p>
+          <p style="font-size:0.85rem; color:var(--color-muted);">${searchFilter ? 'تأكد من كتابة الاسم أو الرمز بشكل صحيح.' : 'أضف موادك أو استوردها بنقرة واحدة من شجرة المتطلبات.'}</p>
         </div>`;
       if (!searchFilter) renderScheduleCoursePicker();
       return;
@@ -1376,7 +1545,7 @@
     alert('تمت إعادة توزيع الخطة بنجاح!');
   });
 
-  // التهيئة الأولية الكاملة مع موجه مساحات العمل
+  // التهيئة الأولية الكاملة مع موجه مساحات العمل وشجرة المتطلبات
   initWorkspaceRouter();
   renderStudentProfile();
   renderCourses();

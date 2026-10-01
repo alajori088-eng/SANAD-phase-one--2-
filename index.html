@@ -27,6 +27,7 @@
       <nav class="main-nav" id="main-nav" aria-label="التنقل الرئيسي">
         <ul class="nav-links">
           <li><a href="#hero" class="nav-link">الرئيسية</a></li>
+          <li><a href="#curriculum" class="nav-link" style="color:var(--color-primary); font-weight:bold;">شجرة المتطلبات 🌳</a></li>
           <li><a href="#study-plan" class="nav-link" style="color:var(--color-accent); font-weight:bold;">خطة الدراسة</a></li>
           <li><a href="#schedule" class="nav-link" style="color:var(--color-primary); font-weight:bold;">رتّب دوامي</a></li>
           <li><a href="#my-courses" class="nav-link">تخصصي وموادي</a></li>
@@ -78,13 +79,13 @@
         مساحة دراسية تمكّنك من <span>تنظيم ومقارنة جدولك ومذاكرتك</span>
       </h1>
       <p class="hero-desc">
-        مبادرة طلابية مستقلة لخدمة طلبة الكلية في توثيق المواد، توليد الجداول الخالية من التعارضات، وبناء خطط المذاكرة للامتحانات.
+        مبادرة طلابية مستقلة لخدمة طلبة الكلية في توثيق المواد، تتبع المتطلبات الأكاديمية، توليد الجداول الخالية من التعارضات، وبناء خطط المذاكرة.
       </p>
 
       <div class="hero-actions">
+        <a href="#curriculum" class="btn btn-primary">شجرة المتطلبات التفاعلية 🌳</a>
         <a href="#study-plan" class="btn btn-accent">خطة الدراسة والمذاكرة 📚</a>
-        <a href="#schedule" class="btn btn-primary">رتّب دوامك 📅</a>
-        <a href="#my-courses" class="btn btn-secondary">إدارة المواد والمصادر</a>
+        <a href="#schedule" class="btn btn-secondary">رتّب دوامك 📅</a>
       </div>
 
       <div class="global-search-wrapper">
@@ -94,6 +95,50 @@
         </div>
         <div id="search-results-panel" class="search-results-panel" role="region" aria-live="polite"></div>
       </div>
+    </section>
+
+    <!-- ================================================================= -->
+    <!-- واجهة شجرة المتطلبات التفاعلية (Curriculum Tree Workspace) -->
+    <!-- ================================================================= -->
+    <section id="curriculum" class="curriculum-section workspace-view" aria-labelledby="curriculum-heading">
+      <div class="section-header">
+        <div class="section-pre">خريطة المواد التفاعلية • تتبع فتح المواد ومسار الخطر</div>
+        <h2 id="curriculum-heading" class="section-title">شجرة المتطلبات: التحقيقات الجنائية الرقمية</h2>
+      </div>
+
+      <!-- لوحة التحكم السريعة بالشجرة -->
+      <div class="tree-control-bar">
+        <div class="tree-stats-row">
+          <div class="tree-stat-pill">
+            <span>🟢 المواد المجتازة:</span> <strong id="tree-passed-count">0</strong>
+          </div>
+          <div class="tree-stat-pill">
+            <span>🔵 المفتوحة للتسجيل:</span> <strong id="tree-available-count">0</strong>
+          </div>
+          <div class="tree-stat-pill">
+            <span>🔒 المغلقة:</span> <strong id="tree-locked-count">0</strong>
+          </div>
+        </div>
+
+        <div style="font-size: 0.85rem; color: var(--color-muted);">
+          💡 <strong>اضغط على أي مادة</strong> لإضاءة كافة المواد التي ستتعطل عليك إذا أسقطتها!
+        </div>
+      </div>
+
+      <!-- تنبيه مسار التأثير والخطر عند الضغط على مادة -->
+      <div id="tree-impact-banner" class="tree-impact-card" style="display: none;"></div>
+
+      <!-- مفتاح رموز الخريطة الأكاديمي -->
+      <div class="tree-legend-box">
+        <div class="legend-item"><span class="legend-color legend-passed"></span> مادة اجتزتها بنجاح</div>
+        <div class="legend-item"><span class="legend-color legend-available"></span> مفتوحة للتسجيل هذا الفصل</div>
+        <div class="legend-item"><span class="legend-color legend-locked"></span> مقفلة (ينقصها متطلب سابق)</div>
+        <div class="legend-item"><span class="legend-badge">🔬</span> مادة لها مختبر عملي</div>
+        <div class="legend-item"><span class="legend-badge">⭐</span> مادة تخصص اختيارية</div>
+      </div>
+
+      <!-- شبكة أعمدة المستويات الأربعة -->
+      <div id="curriculum-tree-container" class="curriculum-tree-grid"></div>
     </section>
 
     <!-- واجهة 2: «خطة الدراسة» -->
@@ -314,10 +359,10 @@
         <h2 class="section-title">تخصصات كلية الذكاء الاصطناعي</h2>
       </div>
       <div class="cards-grid">
+        <article class="info-card"><h3>التحقيقات الجنائية الرقمية</h3><p>جمع واستخراج الأدلة الرقمية وتحليل الحوادث واستعادة البيانات والتحقيق في الجرائم الإلكترونية.</p></article>
         <article class="info-card"><h3>الذكاء الاصطناعي والروبوتات</h3><p>الأنظمة الذكية، تعلم الآلة، والتحكم بالروبوتات.</p></article>
         <article class="info-card"><h3>علم البيانات والذكاء الاصطناعي</h3><p>تحليل البيانات الضخمة وبناء النماذج التنبؤية.</p></article>
         <article class="info-card"><h3>الأمن السيبراني</h3><p>حماية الشبكات والبيانات واختبار الاختراق الرقمي.</p></article>
-        <article class="info-card"><h3>التحقيقات الجنائية الرقمية</h3><p>جمع واستخراج الأدلة الرقمية وتحليل الحوادث واستعادة البيانات والتحقيق في الجرائم الإلكترونية.</p></article>
         <article class="info-card"><h3>هندسة البرمجيات</h3><p>تصميم النظم البرمجية الكبيرة وإدارة دورة حياتها.</p></article>
         <article class="info-card"><h3>علم الحاسوب</h3><p>الخوارزميات، بنية الحواسب، والأساس النظري والعملي.</p></article>
       </div>
@@ -330,8 +375,13 @@
         <h2 class="section-title">حزمة أدوات سند</h2>
       </div>
       <div class="cards-grid">
+        <article class="info-card" style="border-color: var(--color-primary); cursor: pointer;" onclick="location.hash='#curriculum'">
+          <span class="tag-badge" style="margin-bottom: 8px;">جديدة وحصرية 🌳</span>
+          <h3>شجرة المتطلبات التفاعلية ↗</h3>
+          <p>تتبع فتح المواد واكتشاف المسارات التي تتعطل عليك في الخطة قبل موعد التسجيل.</p>
+        </article>
         <article class="info-card" style="border-color: var(--color-accent); cursor: pointer;" onclick="location.hash='#study-plan'">
-          <span class="tag-badge" style="margin-bottom: 8px;">مفعلة (المرحلة الرابعة)</span>
+          <span class="tag-badge" style="margin-bottom: 8px;">مفعلة بالكامل</span>
           <h3>خطة الدراسة ↗</h3>
           <p>تنظيم ومتابعة مذاكرة المواد وجلسات الامتحانات ومراجعتها دون تعارض مع جدولك.</p>
         </article>
@@ -339,11 +389,6 @@
           <span class="tag-badge" style="margin-bottom: 8px;">مفعلة بالكامل</span>
           <h3>رتّب دوامي ↗</h3>
           <p>توليد ومقارنة حتى 3 جداول خالية من التعارضات وفق قيودك بدقة.</p>
-        </article>
-        <article class="info-card" style="border-color: var(--color-primary); cursor: pointer;" onclick="location.hash='#my-courses'">
-          <span class="tag-badge" style="margin-bottom: 8px;">مفعلة بالكامل</span>
-          <h3>تخصصي وموادي ↗</h3>
-          <p>دليل المواد المخصص، تتبع إنجاز الموضوعات، وإدارة الروابط والمصادر الموثوقة.</p>
         </article>
       </div>
     </section>
@@ -776,7 +821,7 @@
       <form id="form-profile">
         <div class="modal-body">
           <div class="form-group"><label class="form-label">الاسم الأول</label><input type="text" id="input-student-name" class="form-input"></div>
-          <div class="form-group"><label class="form-label">التخصص</label><select id="select-student-major" class="form-select"><option value="">غير محدد</option><option value="ai_robotics">الذكاء الاصطناعي والروبوتات</option><option value="data_science">علم البيانات</option><option value="cyber_security">الأمن السيبراني</option><option value="software_eng">هندسة البرمجيات</option><option value="computer_science">علم الحاسوب</option></select></div>
+          <div class="form-group"><label class="form-label">التخصص</label><select id="select-student-major" class="form-select"><option value="digital_forensics">التحقيقات الجنائية الرقمية</option><option value="ai_robotics">الذكاء الاصطناعي والروبوتات</option><option value="data_science">علم البيانات</option><option value="cyber_security">الأمن السيبراني</option><option value="software_eng">هندسة البرمجيات</option><option value="computer_science">علم الحاسوب</option></select></div>
           <div class="form-group"><label class="form-label">سنة الخطة</label><input type="text" id="input-student-year" class="form-input"></div>
         </div>
         <div class="modal-footer"><button type="submit" class="btn btn-primary">حفظ</button></div>
