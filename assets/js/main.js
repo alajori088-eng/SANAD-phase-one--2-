@@ -233,7 +233,7 @@
     if (!elements.curriculumContainer) return;
 
     const student = store.getStudent();
-    if (!elements.treeMajorSelect.dataset.userChanged && student.majorId) {
+    if (elements.treeMajorSelect && !elements.treeMajorSelect.dataset.userChanged && student.majorId) {
       currentTreeMajor = student.majorId;
       elements.treeMajorSelect.value = currentTreeMajor;
     }
@@ -282,7 +282,7 @@
 
     let gridHtml = '';
     [1, 2, 3, 4].forEach(lvl => {
-      const coursesInLevel = levels[lvl];
+      const coursesInLevel = levels[lvl] || [];
       gridHtml += `
         <div class="curriculum-level-column">
           <div class="column-header">
@@ -670,7 +670,7 @@
             </div>
           </div>
           <div style="display:flex; flex-direction:column; gap:4px;">
-            ${res.map(r => `<div style="display:flex; justify-content:space-between; font-size:0.85rem; background:var(--color-bg); padding:4px 8px; border-radius:4px; border:1px solid var(--color-border);"><a href="${store.escapeHtml(r.url \vert{}\vert{} '#')}" target="_blank" style="color:var(--color-primary); text-decoration:none;">🔗 ${store.escapeHtml(r.title)}</a><button type="button" class="icon-btn" data-action="del-res" data-id="${r.id}">✕</button></div>`).join('')}
+            ${res.map(r => `<div style="display:flex; justify-content:space-between; font-size:0.85rem; background:var(--color-bg); padding:4px 8px; border-radius:4px; border:1px solid var(--color-border);"><a href="${store.escapeHtml(r.url || '#')}" target="_blank" style="color:var(--color-primary); text-decoration:none;">🔗 ${store.escapeHtml(r.title)}</a><button type="button" class="icon-btn" data-action="del-res" data-id="${r.id}">✕</button></div>`).join('')}
           </div>
         </div>`;
     }).join('');
@@ -1573,7 +1573,7 @@
       transitBuffer: parseInt(elements.inputStudyTransitBuffer.value, 10) || 15
     });
     hideModal(elements.modalStudySettings);
-    alert('تم حفظ الإعدادات بنجاح. يمكنك الآن الضغط على "إعادة توزيع الخطة" لتطبيق أوقات الفراغ الجديدة.');
+    alert('تم حفظ الإعدادات بنجاح.');
   });
 
   elements.btnTriggerRedistribute?.addEventListener('click', () => {
@@ -1595,7 +1595,7 @@
     alert('تمت إعادة توزيع الخطة بنجاح!');
   });
 
-  // التهيئة الأولية الكاملة مع موجه مساحات العمل وشجرة المتطلبات
+  // التهيئة الأولية الكاملة
   initWorkspaceRouter();
   renderStudentProfile();
   renderCourses();
