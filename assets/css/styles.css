@@ -129,7 +129,7 @@ body {
   font-size: 0.95rem;
   padding: var(--space-xs) var(--space-sm);
   border-radius: var(--radius-sm);
-  transition: color var(--transition);
+  transition: all var(--transition);
 }
 .nav-link:hover, .nav-link:focus { color: var(--color-primary); }
 
@@ -220,11 +220,11 @@ body {
   z-index: 100; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5); display: none;
 }
 
-/* شريط الطالب */
+/* شريط الطالب الدائم */
 .student-bar {
   background: var(--color-card); border: 1px solid var(--color-border);
   border-radius: var(--radius-card); padding: var(--space-md) var(--space-lg);
-  margin-bottom: var(--space-xl); display: flex; align-items: center;
+  margin-top: var(--space-md); margin-bottom: var(--space-lg); display: flex; align-items: center;
   justify-content: space-between; flex-wrap: wrap; gap: var(--space-md);
 }
 .student-info { display: flex; align-items: center; gap: var(--space-md); flex-wrap: wrap; }
@@ -239,13 +239,12 @@ body {
 
 /* أقسام الواجهة */
 .study-plan-section, .schedule-section, .courses-section, .majors-section, .about-section {
-  padding: var(--space-2xl) 0;
-  border-top: 1px solid var(--color-border);
+  padding: var(--space-xl) 0;
 }
 .tools-section {
   background-color: var(--color-tools-bg);
-  padding: var(--space-2xl) 0;
-  border-top: 1px solid var(--color-border);
+  padding: var(--space-xl) 0;
+  border-radius: var(--radius-card);
 }
 .section-header { margin-bottom: var(--space-lg); }
 .section-pre { color: var(--color-accent); font-size: 0.9rem; font-weight: bold; }
@@ -442,7 +441,7 @@ body {
 .progress-bar-fill { height: 100%; background: var(--color-primary); transition: width 0.3s ease; }
 
 /* ==========================================================================
-   نظام النوافذ المنبثقة المرن (بدون أقفال)
+   نظام النوافذ المنبثقة
    ========================================================================== */
 .modal-backdrop {
   position: fixed;
@@ -533,8 +532,28 @@ body {
 }
 
 /* ==========================================================================
-   قواعد الطباعة النظيفة لملفات PDF
+   نظام مساحات العمل وتبديل الواجهات (Workspace Views)
    ========================================================================== */
+.workspace-view {
+  display: none;
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 0.25s ease, transform 0.25s ease;
+}
+
+.workspace-view.active-view {
+  display: block;
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.nav-link.active-nav {
+  color: var(--color-primary) !important;
+  background: rgba(56, 189, 248, 0.12);
+  font-weight: bold;
+}
+
+/* قواعد الطباعة النظيفة لملفات PDF */
 @media print {
   body { background: #ffffff !important; color: #000000 !important; }
   .site-header, .site-footer, .hero-section, .student-bar,
@@ -542,7 +561,9 @@ body {
   .schedule-config-grid, .schedule-tabs, .disclaimer-banner,
   .btn, .icon-btn, .modal-backdrop, .skip-link, #btn-generate-schedule,
   .global-search-wrapper, .study-toolbar-actions, .plan-view-tabs { display: none !important; }
-  .schedule-section { padding: 0 !important; border: none !important; }
+  .schedule-section { padding: 0 !important; border: none !important; display: block !important; }
+  .workspace-view { display: none !important; }
+  #schedule.workspace-view { display: block !important; }
   #schedule-print-header { display: block !important; margin-bottom: 20px; border-bottom: 2px solid #000; padding-bottom: 10px; color: #000 !important; }
   .timetable-desktop-view { display: block !important; background: #fff !important; border: 1px solid #000 !important; }
   .timetable-grid th, .timetable-grid td { border: 1px solid #000 !important; color: #000 !important; background: #fff !important; }

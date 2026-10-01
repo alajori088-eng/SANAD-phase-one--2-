@@ -15,7 +15,7 @@
   <!-- الشريط العلوي -->
   <header class="site-header">
     <div class="container header-inner">
-      <a href="./index.html" class="brand">
+      <a href="#hero" class="brand">
         <span class="brand-name">سند الطالب</span>
         <span class="brand-tag">[SANAD]</span>
       </a>
@@ -56,8 +56,23 @@
       <p style="font-size: 14px; margin-top: 4px;">جامعة البلقاء التطبيقية • كلية الذكاء الاصطناعي</p>
     </div>
 
-    <!-- قسم الترحيب والبحث -->
-    <section id="hero" class="hero-section" aria-labelledby="hero-heading">
+    <!-- شريط الطالب والخصوصية الدائم -->
+    <section class="student-bar" aria-label="بيانات الطالب">
+      <div class="student-info">
+        <div class="student-name" id="student-greeting">مساحة دراستك في كلية الذكاء الاصطناعي</div>
+        <div class="student-tags">
+          <span class="tag-badge" id="student-major-badge" style="display:none;"></span>
+          <span class="tag-badge" id="student-plan-badge" style="display:none;"></span>
+        </div>
+      </div>
+      <div style="display: flex; align-items: center; gap: var(--space-md); flex-wrap: wrap;">
+        <span class="storage-privacy-note">🔒 مجاني بالكامل • بياناتك تُعالج محلياً في جهازك فقط</span>
+        <button type="button" class="btn btn-secondary btn-sm" id="btn-edit-profile">تعديل بياناتي</button>
+      </div>
+    </section>
+
+    <!-- واجهة 1: الرئيسية والترحيب والبحث -->
+    <section id="hero" class="hero-section workspace-view active-view" aria-labelledby="hero-heading">
       <div class="hero-pre">كلية الذكاء الاصطناعي • جامعة البلقاء التطبيقية</div>
       <h1 id="hero-heading" class="hero-title">
         مساحة دراسية تمكّنك من <span>تنظيم ومقارنة جدولك ومذاكرتك</span>
@@ -81,25 +96,8 @@
       </div>
     </section>
 
-    <!-- شريط الطالب والخصوصية -->
-    <section class="student-bar" aria-label="بيانات الطالب">
-      <div class="student-info">
-        <div class="student-name" id="student-greeting">مساحة دراستك في كلية الذكاء الاصطناعي</div>
-        <div class="student-tags">
-          <span class="tag-badge" id="student-major-badge" style="display:none;"></span>
-          <span class="tag-badge" id="student-plan-badge" style="display:none;"></span>
-        </div>
-      </div>
-      <div style="display: flex; align-items: center; gap: var(--space-md); flex-wrap: wrap;">
-        <span class="storage-privacy-note">🔒 مجاني بالكامل • بياناتك تُعالج محلياً في جهازك فقط</span>
-        <button type="button" class="btn btn-secondary btn-sm" id="btn-edit-profile">تعديل بياناتي</button>
-      </div>
-    </section>
-
-    <!-- ================================================================= -->
-    <!-- قسم «خطة الدراسة» (المرحلة الرابعة) -->
-    <!-- ================================================================= -->
-    <section id="study-plan" class="study-plan-section" aria-labelledby="study-plan-heading">
+    <!-- واجهة 2: «خطة الدراسة» -->
+    <section id="study-plan" class="study-plan-section workspace-view" aria-labelledby="study-plan-heading">
       <div class="section-header">
         <div class="section-pre">الأداة الثالثة المفعلة • تنظيم المذاكرة والامتحانات</div>
         <h2 id="study-plan-heading" class="section-title">خطة الدراسة</h2>
@@ -139,7 +137,6 @@
           <div id="plan-progress-bar-fill" class="progress-bar-fill" style="width: 0%; background: var(--color-accent);"></div>
         </div>
 
-        <!-- قائمة الموضوعات والمهام المسجلة -->
         <details style="border-top: 1px solid var(--color-border); padding-top: 8px; font-size: 0.85rem; color: var(--color-muted);">
           <summary style="cursor: pointer; color: var(--color-primary); font-weight: bold;">📋 عرض وإدارة الموضوعات المسجلة في الخطة</summary>
           <div id="study-tasks-manager-list" style="margin-top: 8px; display: flex; flex-direction: column; gap: 6px;"></div>
@@ -161,10 +158,8 @@
       <div id="plan-view-week" style="display: none;"></div>
     </section>
 
-    <!-- ================================================================= -->
-    <!-- قسم «رتّب دوامي» (المرحلة الثالثة) -->
-    <!-- ================================================================= -->
-    <section id="schedule" class="schedule-section" aria-labelledby="schedule-heading">
+    <!-- واجهة 3: «رتّب دوامي» -->
+    <section id="schedule" class="schedule-section workspace-view" aria-labelledby="schedule-heading">
       <div class="section-header">
         <div class="section-pre">الأداة الثانية المفعلة</div>
         <h2 id="schedule-heading" class="section-title">رتّب دوامي</h2>
@@ -276,8 +271,8 @@
       </div>
     </section>
 
-    <!-- قسم «تخصصي وموادي» -->
-    <section id="my-courses" class="courses-section" aria-labelledby="courses-heading">
+    <!-- واجهة 4: «تخصصي وموادي» -->
+    <section id="my-courses" class="courses-section workspace-view" aria-labelledby="courses-heading">
       <div class="section-header">
         <div class="section-pre">الأداة الأولى</div>
         <h2 id="courses-heading" class="section-title">تخصصي وموادي</h2>
@@ -312,8 +307,8 @@
       </div>
     </section>
 
-    <!-- أقسام التخصصات والتعريف -->
-    <section id="majors" class="majors-section">
+    <!-- واجهة 5: «التخصصات» -->
+    <section id="majors" class="majors-section workspace-view">
       <div class="section-header">
         <div class="section-pre">الكلية والبرامج</div>
         <h2 class="section-title">تخصصات كلية الذكاء الاصطناعي</h2>
@@ -328,31 +323,33 @@
       </div>
     </section>
 
-    <section id="tools" class="tools-section">
+    <!-- واجهة 6: «الأدوات» -->
+    <section id="tools" class="tools-section workspace-view">
       <div class="section-header">
         <div class="section-pre">أدوات الطالب</div>
         <h2 class="section-title">حزمة أدوات سند</h2>
       </div>
       <div class="cards-grid">
-        <article class="info-card" style="border-color: var(--color-accent);">
+        <article class="info-card" style="border-color: var(--color-accent); cursor: pointer;" onclick="location.hash='#study-plan'">
           <span class="tag-badge" style="margin-bottom: 8px;">مفعلة (المرحلة الرابعة)</span>
-          <h3>خطة الدراسة</h3>
+          <h3>خطة الدراسة ↗</h3>
           <p>تنظيم ومتابعة مذاكرة المواد وجلسات الامتحانات ومراجعتها دون تعارض مع جدولك.</p>
         </article>
-        <article class="info-card" style="border-color: var(--color-primary);">
+        <article class="info-card" style="border-color: var(--color-primary); cursor: pointer;" onclick="location.hash='#schedule'">
           <span class="tag-badge" style="margin-bottom: 8px;">مفعلة بالكامل</span>
-          <h3>رتّب دوامي</h3>
+          <h3>رتّب دوامي ↗</h3>
           <p>توليد ومقارنة حتى 3 جداول خالية من التعارضات وفق قيودك بدقة.</p>
         </article>
-        <article class="info-card" style="border-color: var(--color-primary);">
+        <article class="info-card" style="border-color: var(--color-primary); cursor: pointer;" onclick="location.hash='#my-courses'">
           <span class="tag-badge" style="margin-bottom: 8px;">مفعلة بالكامل</span>
-          <h3>تخصصي وموادي</h3>
+          <h3>تخصصي وموادي ↗</h3>
           <p>دليل المواد المخصص، تتبع إنجاز الموضوعات، وإدارة الروابط والمصادر الموثوقة.</p>
         </article>
       </div>
     </section>
 
-    <section id="about" class="about-section">
+    <!-- واجهة 7: «عن سند» -->
+    <section id="about" class="about-section workspace-view">
       <div class="section-header">
         <div class="section-pre">عن المشروع</div>
         <h2 class="section-title">سند الطالب: مساحة مستقلة</h2>
@@ -371,11 +368,7 @@
     </div>
   </footer>
 
-  <!-- ================================================================= -->
   <!-- النوافذ المنبثقة الذكية (Modals) -->
-  <!-- ================================================================= -->
-
-  <!-- نافذة إضافة مهمة دراسية -->
   <div id="modal-study-task" class="modal-backdrop" role="dialog" aria-modal="true">
     <div class="modal-dialog">
       <div class="modal-header">
@@ -458,7 +451,6 @@
     </div>
   </div>
 
-  <!-- نافذة إعدادات فترات الفراغ (مُحدّثة بحقول الوقت اليومي) -->
   <div id="modal-study-settings" class="modal-backdrop" role="dialog" aria-modal="true">
     <div class="modal-dialog">
       <div class="modal-header">
@@ -513,7 +505,6 @@
     </div>
   </div>
 
-  <!-- نافذة الإنجاز الجزئي -->
   <div id="modal-partial-complete" class="modal-backdrop" role="dialog" aria-modal="true">
     <div class="modal-dialog" style="max-width: 420px;">
       <div class="modal-header">
@@ -538,7 +529,6 @@
     </div>
   </div>
 
-  <!-- نافذة تعديل توقيت جلسة -->
   <div id="modal-edit-session-time" class="modal-backdrop" role="dialog" aria-modal="true">
     <div class="modal-dialog">
       <div class="modal-header">
@@ -570,7 +560,6 @@
     </div>
   </div>
 
-  <!-- نافذة تأكيد إعادة التوزيع -->
   <div id="modal-redistribute-preview" class="modal-backdrop" role="dialog" aria-modal="true">
     <div class="modal-dialog">
       <div class="modal-header">
@@ -585,7 +574,6 @@
     </div>
   </div>
 
-  <!-- نافذة الاستيراد الذكي للجدول -->
   <div id="modal-smart-import" class="modal-backdrop" role="dialog" aria-modal="true">
     <div class="modal-dialog" style="max-width: 680px;">
       <div class="modal-header">
@@ -633,7 +621,6 @@
     </div>
   </div>
 
-  <!-- نافذة إضافة شعبة يدوية -->
   <div id="modal-section" class="modal-backdrop" role="dialog" aria-modal="true">
     <div class="modal-dialog">
       <div class="modal-header">
@@ -671,7 +658,6 @@
     </div>
   </div>
 
-  <!-- نافذة إضافة فترة ممنوعة -->
   <div id="modal-blocked-time" class="modal-backdrop" role="dialog" aria-modal="true">
     <div class="modal-dialog">
       <div class="modal-header">
@@ -713,7 +699,6 @@
     </div>
   </div>
 
-  <!-- نافذة إضافة موضوع جديد للمادة -->
   <div id="modal-topic" class="modal-backdrop" role="dialog" aria-modal="true">
     <div class="modal-dialog">
       <div class="modal-header">
@@ -724,7 +709,7 @@
         <div class="modal-body">
           <div class="form-group">
             <label for="input-topic-title" class="form-label">عنوان الموضوع *</label>
-            <input type="text" id="input-topic-title" class="form-input" required >
+            <input type="text" id="input-topic-title" class="form-input" required>
           </div>
           <div class="form-group">
             <label for="select-topic-status" class="form-label">حالة الإنجاز</label>
@@ -744,7 +729,6 @@
     </div>
   </div>
 
-  <!-- نافذة إضافة مصدر لموضوع -->
   <div id="modal-resource" class="modal-backdrop" role="dialog" aria-modal="true">
     <div class="modal-dialog">
       <div class="modal-header">
@@ -758,13 +742,12 @@
             <input type="text" id="input-resource-title" class="form-input" placeholder="مثال: سلايدات الشابتر الأول" required>
           </div>
           <div class="form-group">
-            <label for="input-resource-url" class="form-label">رابط المصدر (URL) </label>
-            <input type="url" id="input-resource-url" class="form-input" placeholder="https://..." >
-            <!-- حقل إضافة الملفات بجميع أنواعها -->
-<div class="form-group">
-    <label for="input-resource-file" class="form-label">إضافة ملفات (PDF, Word, PowerPoint, Excel, TXT)</label>
-    <input type="file" id="input-resource-file" class="form-input" accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.txt,.zip,.rar" multiple>
-</div>
+            <label for="input-resource-url" class="form-label">رابط المصدر (URL)</label>
+            <input type="url" id="input-resource-url" class="form-input" placeholder="https://...">
+          </div>
+          <div class="form-group">
+            <label for="input-resource-file" class="form-label">أو إرفاق ملف من جهازك</label>
+            <input type="file" id="input-resource-file" class="form-input" accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.txt,.zip,.rar">
           </div>
           <div class="form-group">
             <label for="select-resource-type" class="form-label">نوع المصدر</label>
@@ -787,7 +770,6 @@
     </div>
   </div>
 
-  <!-- نافذة الملف الشخصي والمادة والحذف -->
   <div id="modal-profile" class="modal-backdrop" role="dialog" aria-modal="true">
     <div class="modal-dialog">
       <div class="modal-header"><h3 class="modal-title">بيانات الطالب</h3><button type="button" class="icon-btn" data-dismiss="modal">✕</button></div>

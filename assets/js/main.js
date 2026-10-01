@@ -1,6 +1,6 @@
 /**
  * سند الطالب | SANAD — المحرك البرمجي الموحد والشامل (v4 النهائي المكتمل)
- * إظهار النوافذ المنبثقة بقوة، توثيق الموضوعات، وتوجيه ذكي لإضافة المواد
+ * تفعيل نظام مساحة العمل (Workspace Views)، توجيه الروابط، وإدارة كاملة للأدوات
  */
 
 (function () {
@@ -153,6 +153,59 @@
   let currentGeneratedSchedules = [];
   let currentActiveScheduleIndex = 0;
 
+  // =============================================================
+  // نظام مساحة العمل وتبديل الواجهات (Workspace Router)
+  // =============================================================
+  function initWorkspaceRouter() {
+    const validViews = ['hero', 'study-plan', 'schedule', 'my-courses', 'majors', 'tools', 'about'];
+
+    function activateView(viewId) {
+      if (!validViews.includes(viewId)) viewId = 'hero';
+
+      validViews.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+          if (id === viewId) {
+            el.classList.add('active-view');
+          } else {
+            el.classList.remove('active-view');
+          }
+        }
+      });
+
+      document.querySelectorAll('.nav-link').forEach(link => {
+        const href = link.getAttribute('href');
+        if (href === `#${viewId}`) {
+          link.classList.add('active-nav');
+        } else {
+          link.classList.remove('active-nav');
+        }
+      });
+
+      if (elements.mainNav) elements.mainNav.classList.remove('is-open');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    window.addEventListener('hashchange', () => {
+      const hash = window.location.hash.replace('#', '');
+      activateView(hash);
+    });
+
+    document.addEventListener('click', (e) => {
+      const anchor = e.target.closest('a[href^="#"]');
+      if (!anchor) return;
+      const targetId = anchor.getAttribute('href').replace('#', '');
+      if (validViews.includes(targetId)) {
+        e.preventDefault();
+        history.pushState(null, '', `#${targetId}`);
+        activateView(targetId);
+      }
+    });
+
+    const initialHash = window.location.hash.replace('#', '') || 'hero';
+    activateView(initialHash);
+  }
+
   if (store.isCorrupted() && elements.corruptedBanner && elements.corruptionMsg) {
     elements.corruptionMsg.textContent = store.getCorruptionDetails() || 'حدث خطأ في تحميل البيانات المحفوظة.';
     elements.corruptedBanner.style.display = 'flex';
@@ -165,7 +218,6 @@
     }
   });
 
-  // إدارة النوافذ المنبثقة بقوة برمجية تمنع أي حجب
   function showModal(m) {
     if (!m) return;
     m.classList.add('is-open');
@@ -198,11 +250,6 @@
 
   if (elements.menuToggle && elements.mainNav) {
     elements.menuToggle.addEventListener('click', () => elements.mainNav.classList.toggle('is-open'));
-    elements.mainNav.querySelectorAll('.nav-link').forEach(link => {
-      link.addEventListener('click', () => {
-        elements.mainNav.classList.remove('is-open');
-      });
-    });
   }
 
   function checkSavedScheduleAlert() {
@@ -284,7 +331,9 @@
     elements.searchResultsPanel.addEventListener('click', (e) => {
       const item = e.target.closest('[data-action="go-course"]');
       if (item) {
-        openCourseDetails(item.getAttribute('data-id'));
+        const cId = item.getAttribute('data-id');
+        location.hash = '#my-courses';
+        openCourseDetails(cId);
         elements.searchResultsPanel.style.display = 'none';
         elements.globalSearchInput.value = '';
       }
@@ -402,7 +451,7 @@
             </div>
           </div>
           <div style="display:flex; flex-direction:column; gap:4px;">
-            ${res.map(r => `<div style="display:flex; justify-content:space-between; font-size:0.85rem; background:var(--color-bg); padding:4px 8px; border-radius:4px; border:1px solid var(--color-border);"><a href="${store.escapeHtml(r.url)}" target="_blank" style="color:var(--color-primary); text-decoration:none;">🔗 ${store.escapeHtml(r.title)}</a><button type="button" class="icon-btn" data-action="del-res" data-id="${r.id}">✕</button></div>`).join('')}
+            ${res.map(r => `<div style="display:flex; justify-content:space-between; font-size:0.85rem; background:var(--color-bg); padding:4px 8px; border-radius:4px; border:1px solid var(--color-border);"><a href="${store.escapeHtml(r.url || '#')}" target="_blank" style="color:var(--color-primary); text-decoration:none;">🔗 ${store.escapeHtml(r.title)}</a><button type="button" class="icon-btn" data-action="del-res" data-id="${r.id}">✕</button></div>`).join('')}
           </div>
         </div>`;
     }).join('');
@@ -456,11 +505,25 @@
 
   elements.formResource?.addEventListener('submit', (e) => {
     e.preventDefault();
+    const titleVal = document.getElementById('input-resource-title').value;
+    const urlVal = document.getElementById('input-resource-url').value;
+    const fileInput = document.getElementById('input-resource-file');
+    const hasFiles = fileInput && fileInput.files && fileInput.files.length > 0;
+
+    let finalUrl = urlVal ? urlVal.trim() : '';
+    if (!finalUrl && hasFiles) {
+      finalUrl = '#local-file:' + encodeURIComponent(fileInput.files[0].name);
+    }
+
+    if (!finalUrl) {
+      return alert('يرجى وضع رابط أو إرفاق ملف واحد على الأقل.');
+    }
+
     store.addResource({
       courseId: currentViewCourseId,
       topicId: activeTopicForResource,
-      title: document.getElementById('input-resource-title').value,
-      url: document.getElementById('input-resource-url').value,
+      title: titleVal,
+      url: finalUrl,
       type: document.getElementById('select-resource-type').value
     });
     hideModal(elements.resourceModal);
@@ -1202,11 +1265,11 @@
     renderStudyPlanUI();
   });
 
-  // توجيه ذكي: إذا لم تكن هناك مواد بعد، فتح نافذة إضافة مادة مباشرة
   elements.btnOpenAddStudyTask?.addEventListener('click', () => {
     const courses = store.getCourses();
     if (courses.length === 0) {
       if (confirm('لا توجد لديك مواد مسجلة بعد في خطتك. هل ترغب بإضافة مادة دراسية الآن أولاً؟')) {
+        location.hash = '#my-courses';
         elements.courseForm?.reset();
         showModal(elements.courseModal);
       }
@@ -1313,7 +1376,8 @@
     alert('تمت إعادة توزيع الخطة بنجاح!');
   });
 
-  // التهيئة الأولية الكاملة
+  // التهيئة الأولية الكاملة مع موجه مساحات العمل
+  initWorkspaceRouter();
   renderStudentProfile();
   renderCourses();
   renderScheduleSectionsList();
@@ -1323,45 +1387,3 @@
   renderStudyPlanUI();
 
 })();
-document.addEventListener('DOMContentLoaded', function() {
-    const resourceForm = document.getElementById('form-resource');
-    
-    if (resourceForm) {
-        resourceForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            const titleInput = document.getElementById('input-resource-title');
-            const urlInput = document.getElementById('input-resource-url');
-            const typeSelect = document.getElementById('select-resource-type');
-            const fileInput = document.getElementById('input-resource-file');
-            
-            const urlValue = urlInput ? urlInput.value.trim() : '';
-            const hasFiles = fileInput && fileInput.files && fileInput.files.length > 0;
-
-            // إذا ما حط لا رابط ولا ملف، بنطلع له تنبيه
-            if (!urlValue && !hasFiles) {
-                alert('يرجى وضع رابط أو إرفاق ملف واحد على الأقل');
-                return;
-            }
-
-            let fileList = [];
-            if (hasFiles) {
-                Array.from(fileInput.files).forEach(function(f) {
-                    fileList.push({ name: f.name, size: f.size });
-                });
-            }
-
-            if (typeof saveResourceData === 'function') {
-                saveResourceData({
-                    title: titleInput ? titleInput.value : '',
-                    url: urlValue,
-                    type: typeSelect ? typeSelect.value : 'other',
-                    files: fileList
-                });
-            }
-
-            alert('تم حفظ المصدر بنجاح');
-            resourceForm.reset();
-        });
-    }
-});
