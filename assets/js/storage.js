@@ -1,6 +1,6 @@
 /**
  * سند الطالب | SANAD — وحدة البيانات والتخزين والمحرك المشترك (v4 المستقر)
- * تحديث الخطة الجديدة لتخصص الذكاء الاصطناعي والروبوتات
+ * اكتمال جميع الخطط الجديدة والقديمة لكافة تخصصات الكلية
  */
 
 (function (window) {
@@ -22,10 +22,10 @@
 
   const MAJORS = [
     { id: 'ai_robotics', name: 'الذكاء الاصطناعي والروبوتات' },
+    { id: 'virtual_reality', name: 'الواقع الافتراضي' },
     { id: 'digital_forensics', name: 'التحقيقات الجنائية الرقمية' },
     { id: 'data_science', name: 'علم البيانات والذكاء الاصطناعي' },
     { id: 'cyber_security', name: 'أمن المعلومات والفضاء الإلكتروني' },
-    { id: 'virtual_reality', name: 'الواقع الافتراضي' },
     { id: 'software_eng', name: 'هندسة البرمجيات' },
     { id: 'computer_science', name: 'علم الحاسوب' }
   ];
@@ -55,7 +55,7 @@
     other: 'أخرى'
   };
 
-  // قاعدة بيانات الخطط الشجرية (القديمة والجديدة)
+  // قاعدة بيانات الخطط الشجرية (القديمة والجديدة) مكتملة كلياً
   const CURRICULUM_DATA = {
     // -------------------------------------------------------------
     // الذكاء الاصطناعي والروبوتات
@@ -101,30 +101,23 @@
         { id: 'parallel_prog_ai', name: 'البرمجة المتوازية للتطبيقات الذكية', hours: 3, level: 4, prereq: ['algorithms'], coreq: [], hasLab: false, isElective: true }
       ],
       new: [
-        // المستوى 1
         { id: 'na_calc_1', name: 'التفاضل والتكامل 1', hours: 3, level: 1, prereq: [], coreq: [], hasLab: false },
         { id: 'na_cyber_foundations', name: 'مبادئ الامن السيبراني', hours: 3, level: 1, prereq: [], coreq: [], hasLab: false },
         { id: 'na_ds_basics', name: 'اساسيات علم البيانات', hours: 3, level: 1, prereq: [], coreq: [], hasLab: false },
         { id: 'na_os_networks', name: 'انظمة التشغيل وشبكات الحاسوب', hours: 3, level: 1, prereq: [], coreq: [], hasLab: false },
         { id: 'na_sci_computer_skills', name: 'مهارات حاسوب لطلبة الكليات العلمية', hours: 3, level: 1, prereq: [], coreq: [], hasLab: true },
-
-        // المستوى 2
         { id: 'na_calc_2', name: 'التفاضل والتكامل 2', hours: 3, level: 2, prereq: ['na_calc_1'], coreq: [], hasLab: false },
         { id: 'na_linear_algebra', name: 'الجبر الخطى', hours: 3, level: 2, prereq: ['na_calc_1'], coreq: [], hasLab: false },
         { id: 'na_prob_stat', name: 'الاحتمالات والاحصاء', hours: 3, level: 2, prereq: ['na_calc_1'], coreq: [], hasLab: false },
         { id: 'na_oop_lab', name: 'برمجة موجهة للكائنات (مختبر)', hours: 3, level: 2, prereq: ['na_sci_computer_skills'], coreq: [], hasLab: true },
         { id: 'na_digital_logic', name: 'تصميم المنطق الرقمي', hours: 3, level: 2, prereq: ['na_calc_1'], coreq: [], hasLab: false },
         { id: 'na_go_lang', name: 'برمجة بلغة غو', hours: 3, level: 2, prereq: ['na_os_networks'], coreq: [], hasLab: false },
-
-        // المستوى 3
         { id: 'na_computer_arch', name: 'معمارية الحاسوب', hours: 3, level: 3, prereq: ['na_digital_logic'], coreq: [], hasLab: false },
         { id: 'na_embedded_systems', name: 'الانظمة المضمنة (مختبر)', hours: 3, level: 3, prereq: ['na_digital_logic'], coreq: [], hasLab: true },
         { id: 'na_optimization', name: 'التحسين (مختبر)', hours: 3, level: 3, prereq: ['na_calc_2'], coreq: [], hasLab: true },
         { id: 'na_machine_learning', name: 'تعلم الآلة (مختبر)', hours: 3, level: 3, prereq: ['na_prob_stat'], coreq: [], hasLab: true },
         { id: 'na_analytical_math', name: 'الرياضيات التحليلية', hours: 3, level: 3, prereq: ['na_linear_algebra'], coreq: [], hasLab: false },
         { id: 'na_kinematics_dynamics', name: 'اساسيات الحركة والديناميكا', hours: 3, level: 3, prereq: ['na_linear_algebra'], coreq: [], hasLab: false },
-
-        // المستوى 4
         { id: 'na_mobile_robots', name: 'الروبوتات المتنقلة (مختبر)', hours: 3, level: 4, prereq: ['na_machine_learning'], coreq: [], hasLab: true },
         { id: 'na_robot_vision', name: 'روبوت الرؤية', hours: 3, level: 4, prereq: ['na_machine_learning'], coreq: [], hasLab: false },
         { id: 'na_cognitive_robots', name: 'الروبوتات الادراك (مختبر)', hours: 3, level: 4, prereq: ['na_kinematics_dynamics'], coreq: [], hasLab: true },
@@ -134,6 +127,93 @@
       ]
     },
 
+    // -------------------------------------------------------------
+    // الواقع الافتراضي
+    // -------------------------------------------------------------
+    virtual_reality: {
+      old: [
+        { id: 'cs_skills_1', name: 'مهارات حاسوب وتعلم الكتروني', hours: 3, level: 1, prereq: [], coreq: ['cs_skills_2'], hasLab: false },
+        { id: 'cs_skills_2', name: 'مهارات حاسوب (2) للكليات العلمية (مختبر)', hours: 3, level: 1, prereq: [], coreq: ['cs_skills_1'], hasLab: true },
+        { id: 'calc_1', name: 'التفاضل والتكامل (1)', hours: 3, level: 1, prereq: [], coreq: [], hasLab: false },
+        { id: 'math_for_graphics', name: 'الرياضيات للرسم بالحاسوب', hours: 3, level: 1, prereq: [], coreq: [], hasLab: false },
+        { id: 'vr_intro', name: 'مقدمة الى الواقع الافتراضي', hours: 3, level: 1, prereq: [], coreq: [], hasLab: false },
+        { id: 'unix_intro', name: 'مقدمة الى يونكس', hours: 3, level: 1, prereq: [], coreq: [], hasLab: false },
+        { id: 'ar_app', name: 'لغة عربية تطبيقية', hours: 3, level: 1, prereq: [], coreq: [], hasLab: false },
+        { id: 'en_app_1', name: 'لغة انجليزية تطبيقية (1)', hours: 3, level: 1, prereq: [], coreq: [], hasLab: false },
+        { id: 'en_app_2', name: 'لغة انجليزية تطبيقية (2)', hours: 3, level: 2, prereq: ['en_app_1'], coreq: [], hasLab: false },
+        { id: 'calc_2', name: 'التفاضل والتكامل (2)', hours: 3, level: 2, prereq: ['calc_1'], coreq: [], hasLab: false },
+        { id: 'discrete_math', name: 'هياكل رياضيات منفصلة', hours: 3, level: 2, prereq: ['calc_1'], coreq: [], hasLab: false },
+        { id: 'intermediate_analysis', name: 'مبادئ التحليل الوسطي', hours: 3, level: 2, prereq: ['calc_2', 'math_for_graphics'], coreq: [], hasLab: false },
+        { id: 'storyboard_design', name: 'تصميم القصة المصورة للواقع الافتراضي والمعزز', hours: 3, level: 2, prereq: ['vr_intro'], coreq: [], hasLab: false },
+        { id: 'oop', name: 'البرمجة الموجهة للكائنات (مختبر)', hours: 3, level: 2, prereq: ['cs_skills_2'], coreq: [], hasLab: true },
+        { id: 'ai_intro', name: 'مقدمة في الذكاء الاصطناعي', hours: 3, level: 2, prereq: ['discrete_math'], coreq: [], hasLab: false },
+        { id: 'hci', name: 'تفاعل الانسان والحاسوب', hours: 3, level: 3, prereq: ['storyboard_design'], coreq: [], hasLab: false },
+        { id: 'ux_design', name: 'تصميم تجربة المستخدم', hours: 3, level: 3, prereq: ['hci'], coreq: [], hasLab: false, isElective: true },
+        { id: 'computer_graphics', name: 'الرسم بالحاسوب', hours: 3, level: 3, prereq: ['hci', 'intermediate_analysis'], coreq: [], hasLab: false },
+        { id: 'image_processing', name: 'معالجة الصور', hours: 3, level: 3, prereq: ['computer_graphics'], coreq: [], hasLab: false },
+        { id: 'multimedia', name: 'الوسائط المتعددة', hours: 3, level: 3, prereq: ['computer_graphics'], coreq: [], hasLab: false },
+        { id: 'data_structures_algo', name: 'هياكل بيانات وخوارزميات (مختبر)', hours: 3, level: 3, prereq: ['oop'], coreq: [], hasLab: true },
+        { id: 'ai_prog', name: 'برمجة الذكاء الاصطناعي', hours: 3, level: 3, prereq: ['ai_intro'], coreq: [], hasLab: false },
+        { id: 'machine_learning', name: 'تعلم الآلة', hours: 3, level: 3, prereq: ['ai_intro', 'data_structures_algo'], coreq: [], hasLab: false },
+        { id: 'computer_vision', name: 'رؤية الكمبيوتر', hours: 3, level: 3, prereq: ['machine_learning', 'image_processing'], coreq: [], hasLab: false },
+        { id: 'animation_2d', name: 'رسوم متحركة ثنائية الابعاد (مختبر)', hours: 3, level: 3, prereq: ['multimedia'], coreq: [], hasLab: true },
+        { id: 'modeling_3d', name: 'تصميم النماذج ثلاثية الابعاد', hours: 3, level: 3, prereq: ['multimedia'], coreq: [], hasLab: false },
+        { id: 'sculpting', name: 'نسخ الرسوم والنحت', hours: 3, level: 3, prereq: ['modeling_3d'], coreq: [], hasLab: false, isElective: true },
+        { id: 'digital_movies', name: 'تصميم افلام رقمية', hours: 3, level: 4, prereq: ['sculpting'], coreq: [], hasLab: false, isElective: true },
+        { id: 'game_design_dev', name: 'تصميم وتطوير الالعاب الالكترونية (مختبر)', hours: 3, level: 4, prereq: ['animation_2d'], coreq: [], hasLab: true },
+        { id: 'game_ai', name: 'الذكاء الاصطناعي للالعاب الالكترونية', hours: 3, level: 4, prereq: ['game_design_dev'], coreq: [], hasLab: false, isElective: true },
+        { id: 'vr_systems_design', name: 'تصميم وبناء انظمة الواقع الافتراضي', hours: 3, level: 4, prereq: ['modeling_3d'], coreq: [], hasLab: false },
+        { id: 'haptics_intro', name: 'المقدمة الى تكنولوجيا الهابتك', hours: 3, level: 4, prereq: ['vr_systems_design'], coreq: [], hasLab: false },
+        { id: 'mobile_vr', name: 'الواقع الافتراضي على منصات الجوال', hours: 3, level: 4, prereq: ['vr_systems_design', 'computer_vision'], coreq: [], hasLab: false },
+        { id: 'adv_prog', name: 'برمجة متقدمة', hours: 3, level: 4, prereq: ['data_structures_algo'], coreq: [], hasLab: false },
+        { id: 'db_1', name: 'تصميم وادارة قواعد البيانات (1) (مختبر)', hours: 3, level: 4, prereq: ['data_structures_algo'], coreq: [], hasLab: true },
+        { id: 'web_app_prog', name: 'برمجة تطبيقات الانترنت', hours: 3, level: 4, prereq: ['db_1'], coreq: [], hasLab: false },
+        { id: 'systems_analysis_design', name: 'تحليل وتصميم النظم', hours: 3, level: 4, prereq: [], coreq: [], hasLab: false, isElective: true },
+        { id: 'gis', name: 'انظمة المعلومات الجغرافية', hours: 3, level: 4, prereq: [], coreq: [], hasLab: false, isElective: true },
+        { id: 'special_topics_vr', name: 'موضوعات خاصة في الواقع الافتراضي', hours: 3, level: 4, prereq: [], coreq: [], hasLab: false, isElective: true },
+        { id: 'parallel_computing', name: 'الحوسبة المتوازنة', hours: 3, level: 4, prereq: [], coreq: [], hasLab: false, isElective: true },
+        { id: 'iot', name: 'انترنت الاشياء', hours: 3, level: 4, prereq: [], coreq: [], hasLab: false, isElective: true }
+      ],
+      new: [
+        // المستوى 1
+        { id: 'nv_calc_1', name: 'التفاضل والتكامل 1', hours: 3, level: 1, prereq: [], coreq: [], hasLab: false },
+        { id: 'nv_vr_intro', name: 'مقدمة الى الواقع الافتراضي وتطوير الالعاب', hours: 3, level: 1, prereq: [], coreq: [], hasLab: false },
+        { id: 'nv_animated_3d', name: 'الرسوم المتحركة ثنائية الابعاد (مختبر)', hours: 3, level: 1, prereq: [], coreq: [], hasLab: true },
+        { id: 'nv_cyber_foundations', name: 'مبادئ الامن السيبراني', hours: 3, level: 1, prereq: [], coreq: [], hasLab: false },
+        { id: 'nv_sci_computer_skills', name: 'مهارات حاسوب لطلبة الكليات العلمية (مختبر)', hours: 3, level: 1, prereq: [], coreq: [], hasLab: true },
+
+        // المستوى 2
+        { id: 'nv_calc_2', name: 'التفاضل والتكامل 2', hours: 3, level: 2, prereq: ['nv_calc_1'], coreq: [], hasLab: false },
+        { id: 'nv_prob_stat', name: 'الاحتمالات والاحصاء', hours: 3, level: 2, prereq: ['nv_calc_1'], coreq: [], hasLab: false },
+        { id: 'nv_linear_algebra', name: 'الجبر الخطى', hours: 3, level: 2, prereq: ['nv_calc_1'], coreq: [], hasLab: false },
+        { id: 'nv_oop_lab', name: 'برمجة موجهة للكائنات (مختبر)', hours: 3, level: 2, prereq: ['nv_sci_computer_skills'], coreq: [], hasLab: true },
+        { id: 'nv_storyboard', name: 'تصميم القصة المصورة للواقع الافتراضي وتطوير الالعاب', hours: 3, level: 2, prereq: ['nv_vr_intro'], coreq: [], hasLab: false },
+        { id: 'nv_multimedia', name: 'الوسائط المتعددة', hours: 3, level: 2, prereq: ['nv_animated_3d'], coreq: [], hasLab: false },
+        { id: 'nv_modeling_3d', name: 'تصميم وتحريك النماذج ثلاثية الابعاد', hours: 3, level: 2, prereq: ['nv_animated_3d'], coreq: [], hasLab: false },
+
+        // المستوى 3
+        { id: 'nv_machine_learning', name: 'تعلم الآلة (مختبر)', hours: 3, level: 3, prereq: ['nv_linear_algebra', 'nv_prob_stat'], coreq: [], hasLab: true },
+        { id: 'nv_audio_effects', name: 'تصميم المؤثرات الصوتية', hours: 3, level: 3, prereq: ['nv_multimedia'], coreq: [], hasLab: false },
+        { id: 'nv_hci', name: 'تفاعل الانسان والحاسوب', hours: 3, level: 3, prereq: ['nv_multimedia'], coreq: [], hasLab: false },
+        { id: 'nv_data_structures', name: 'الخوارزميات وهياكل بيانات', hours: 3, level: 3, prereq: ['nv_oop_lab'], coreq: [], hasLab: false },
+        { id: 'nv_character_3d', name: 'تصميم الشخصيات ثلاثية الابعاد (مختبر)', hours: 3, level: 3, prereq: ['nv_modeling_3d'], coreq: [], hasLab: true },
+        { id: 'nv_vr_systems', name: 'تصميم أنظمة الواقع الافتراضي', hours: 3, level: 3, prereq: ['nv_modeling_3d'], coreq: [], hasLab: false },
+
+        // المستوى 4
+        { id: 'nv_web_prog', name: 'برمجة تطبيقات الانترنت', hours: 3, level: 4, prereq: ['nv_data_structures'], coreq: [], hasLab: false },
+        { id: 'nv_os_networks', name: 'أنظمة التشغيل وشبكات الحاسوب', hours: 3, level: 4, prereq: ['nv_data_structures'], coreq: [], hasLab: false },
+        { id: 'nv_game_design', name: 'تصميم وتطوير الالعاب الالكترونية', hours: 3, level: 4, prereq: ['nv_storyboard'], coreq: [], hasLab: false },
+        { id: 'nv_haptics', name: 'مقدمة الى تكنولوجيا الهابتك (مختبر)', hours: 3, level: 4, prereq: ['nv_vr_systems'], coreq: [], hasLab: true },
+        { id: 'nv_mixed_reality', name: 'تطوير أنظمة الواقع المعزز والمختلط', hours: 3, level: 4, prereq: ['nv_vr_systems'], coreq: [], hasLab: false },
+        { id: 'nv_mobile_apps', name: 'برمجة تطبيقات الهواتف الذكية', hours: 3, level: 4, prereq: ['nv_os_networks'], coreq: [], hasLab: false },
+        { id: 'nv_game_optimization', name: 'وتحسين الالعاب وضبط الاداء', hours: 3, level: 4, prereq: ['nv_game_design'], coreq: [], hasLab: false },
+        { id: 'nv_vr_interfaces', name: 'تصميم واجهات الواقع الافتراضي', hours: 3, level: 4, prereq: ['nv_hci'], coreq: [], hasLab: false }
+      ]
+    },
+
+    // -------------------------------------------------------------
+    // باقي التخصصات
+    // -------------------------------------------------------------
     digital_forensics: {
       old: [
         { id: 'cs_skills_1', name: 'مهارات الحاسوب والتعليم الإلكتروني', hours: 3, level: 1, prereq: [], coreq: ['cs_skills_2'], hasLab: false },
@@ -343,8 +423,6 @@
       ]
     },
 
-    virtual_reality: { old: [], new: [] },
-    ai_robotics: { old: [], new: [] },
     software_eng: { old: [], new: [] },
     computer_science: { old: [], new: [] }
   };
@@ -374,7 +452,7 @@
 
     return {
       schemaVersion: SCHEMA_VERSION,
-      student: { firstName: '', majorId: 'digital_forensics', planYear: '2023' },
+      student: { firstName: '', majorId: 'ai_robotics', planYear: '2023' },
       courses: [],
       topics: [],
       resources: [],
@@ -532,7 +610,7 @@
 
   function getStudent() { return { ...state.student }; }
   function setStudent(data) {
-    state.student = { firstName: (data.firstName || '').trim(), majorId: (data.majorId || 'digital_forensics').trim(), planYear: (data.planYear || '2023').trim() };
+    state.student = { firstName: (data.firstName || '').trim(), majorId: (data.majorId || 'ai_robotics').trim(), planYear: (data.planYear || '2023').trim() };
     return save();
   }
 
@@ -1205,8 +1283,8 @@
   // -------------------------------------------------------------
   // محرك شجرة المتطلبات لجميع التخصصات والخطط (Curriculum Engine)
   // -------------------------------------------------------------
-  function getCurriculumTree(majorId = 'digital_forensics', era = 'old') {
-    const majorPlans = CURRICULUM_DATA[majorId] || CURRICULUM_DATA.digital_forensics;
+  function getCurriculumTree(majorId = 'ai_robotics', era = 'old') {
+    const majorPlans = CURRICULUM_DATA[majorId] || CURRICULUM_DATA.ai_robotics;
     const list = majorPlans[era] || [];
     const passed = new Set(state.passedCurriculumCourses || []);
 
@@ -1240,8 +1318,8 @@
     return { success: true, passed: state.passedCurriculumCourses };
   }
 
-  function getDependentCurriculumCourses(courseId, majorId = 'digital_forensics', era = 'old') {
-    const majorPlans = CURRICULUM_DATA[majorId] || CURRICULUM_DATA.digital_forensics;
+  function getDependentCurriculumCourses(courseId, majorId = 'ai_robotics', era = 'old') {
+    const majorPlans = CURRICULUM_DATA[majorId] || CURRICULUM_DATA.ai_robotics;
     const list = majorPlans[era] || [];
     const dependents = new Set();
 
