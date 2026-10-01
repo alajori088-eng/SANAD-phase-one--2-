@@ -1145,4 +1145,4 @@
     globalSearch
   };
 
-})(window);خن
+})(window);
