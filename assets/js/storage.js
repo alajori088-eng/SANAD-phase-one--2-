@@ -1,6 +1,6 @@
 /**
  * سند الطالب | SANAD — وحدة البيانات والتخزين والمحرك المشترك (v4 المستقر)
- * الخطط السابقة معتمدة بالكامل في (old)، والخطة الجديدة (new) فارغة تماماً
+ * دعم كامل للخطط القديمة والجديدة، وشجرات (الواقع الافتراضي، أمن المعلومات، الذكاء، الجنائية)
  */
 
 (function (window) {
@@ -21,6 +21,7 @@
   ];
 
   const MAJORS = [
+    { id: 'virtual_reality', name: 'الواقع الافتراضي' },
     { id: 'cyber_security', name: 'أمن المعلومات والفضاء الإلكتروني' },
     { id: 'ai_robotics', name: 'الذكاء الاصطناعي والروبوتات' },
     { id: 'digital_forensics', name: 'التحقيقات الجنائية الرقمية' },
@@ -54,14 +55,72 @@
     other: 'أخرى'
   };
 
-  // قاعدة بيانات الخطط الشجرية: الخطط المعتمدة حالياً موضوعة في old، و new فارغة تماماً
+  // قاعدة بيانات الخطط الشجرية
   const CURRICULUM_DATA = {
+    // -------------------------------------------------------------
+    // الواقع الافتراضي (الخطة القديمة)
+    // -------------------------------------------------------------
+    virtual_reality: {
+      old: [
+        // المستوى 1
+        { id: 'cs_skills_1', name: 'مهارات حاسوب وتعلم الكتروني', hours: 3, level: 1, prereq: [], coreq: ['cs_skills_2'], hasLab: false },
+        { id: 'cs_skills_2', name: 'مهارات حاسوب (2) للكليات العلمية (مختبر)', hours: 3, level: 1, prereq: [], coreq: ['cs_skills_1'], hasLab: true },
+        { id: 'calc_1', name: 'التفاضل والتكامل (1)', hours: 3, level: 1, prereq: [], coreq: [], hasLab: false },
+        { id: 'math_for_graphics', name: 'الرياضيات للرسم بالحاسوب', hours: 3, level: 1, prereq: [], coreq: [], hasLab: false },
+        { id: 'vr_intro', name: 'مقدمة الى الواقع الافتراضي', hours: 3, level: 1, prereq: [], coreq: [], hasLab: false },
+        { id: 'unix_intro', name: 'مقدمة الى يونكس', hours: 3, level: 1, prereq: [], coreq: [], hasLab: false },
+        { id: 'ar_app', name: 'لغة عربية تطبيقية', hours: 3, level: 1, prereq: [], coreq: [], hasLab: false },
+        { id: 'en_app_1', name: 'لغة انجليزية تطبيقية (1)', hours: 3, level: 1, prereq: [], coreq: [], hasLab: false },
+
+        // المستوى 2
+        { id: 'en_app_2', name: 'لغة انجليزية تطبيقية (2)', hours: 3, level: 2, prereq: ['en_app_1'], coreq: [], hasLab: false },
+        { id: 'calc_2', name: 'التفاضل والتكامل (2)', hours: 3, level: 2, prereq: ['calc_1'], coreq: [], hasLab: false },
+        { id: 'discrete_math', name: 'هياكل رياضيات منفصلة', hours: 3, level: 2, prereq: ['calc_1'], coreq: [], hasLab: false },
+        { id: 'intermediate_analysis', name: 'مبادئ التحليل الوسطي', hours: 3, level: 2, prereq: ['calc_2', 'math_for_graphics'], coreq: [], hasLab: false },
+        { id: 'storyboard_design', name: 'تصميم القصة المصورة للواقع الافتراضي والمعزز', hours: 3, level: 2, prereq: ['vr_intro'], coreq: [], hasLab: false },
+        { id: 'oop', name: 'البرمجة الموجهة للكائنات (مختبر)', hours: 3, level: 2, prereq: ['cs_skills_2'], coreq: [], hasLab: true },
+        { id: 'ai_intro', name: 'مقدمة في الذكاء الاصطناعي', hours: 3, level: 2, prereq: ['discrete_math'], coreq: [], hasLab: false },
+
+        // المستوى 3
+        { id: 'hci', name: 'تفاعل الانسان والحاسوب', hours: 3, level: 3, prereq: ['storyboard_design'], coreq: [], hasLab: false },
+        { id: 'ux_design', name: 'تصميم تجربة المستخدم', hours: 3, level: 3, prereq: ['hci'], coreq: [], hasLab: false, isElective: true },
+        { id: 'computer_graphics', name: 'الرسم بالحاسوب', hours: 3, level: 3, prereq: ['hci', 'intermediate_analysis'], coreq: [], hasLab: false },
+        { id: 'image_processing', name: 'معالجة الصور', hours: 3, level: 3, prereq: ['computer_graphics'], coreq: [], hasLab: false },
+        { id: 'multimedia', name: 'الوسائط المتعددة', hours: 3, level: 3, prereq: ['computer_graphics'], coreq: [], hasLab: false },
+        { id: 'data_structures_algo', name: 'هياكل بيانات وخوارزميات (مختبر)', hours: 3, level: 3, prereq: ['oop'], coreq: [], hasLab: true },
+        { id: 'ai_prog', name: 'برمجة الذكاء الاصطناعي', hours: 3, level: 3, prereq: ['ai_intro'], coreq: [], hasLab: false },
+        { id: 'machine_learning', name: 'تعلم الآلة', hours: 3, level: 3, prereq: ['ai_intro', 'data_structures_algo'], coreq: [], hasLab: false },
+        { id: 'computer_vision', name: 'رؤية الكمبيوتر', hours: 3, level: 3, prereq: ['machine_learning', 'image_processing'], coreq: [], hasLab: false },
+        { id: 'animation_2d', name: 'رسوم متحركة ثنائية الابعاد (مختبر)', hours: 3, level: 3, prereq: ['multimedia'], coreq: [], hasLab: true },
+        { id: 'modeling_3d', name: 'تصميم النماذج ثلاثية الابعاد', hours: 3, level: 3, prereq: ['multimedia'], coreq: [], hasLab: false },
+        { id: 'sculpting', name: 'نسخ الرسوم والنحت', hours: 3, level: 3, prereq: ['modeling_3d'], coreq: [], hasLab: false, isElective: true },
+        { id: 'digital_movies', name: 'تصميم افلام رقمية', hours: 3, level: 4, prereq: ['sculpting'], coreq: [], hasLab: false, isElective: true },
+
+        // المستوى 4 والتخصصي
+        { id: 'game_design_dev', name: 'تصميم وتطوير الالعاب الالكترونية (مختبر)', hours: 3, level: 4, prereq: ['animation_2d'], coreq: [], hasLab: true },
+        { id: 'game_ai', name: 'الذكاء الاصطناعي للالعاب الالكترونية', hours: 3, level: 4, prereq: ['game_design_dev'], coreq: [], hasLab: false, isElective: true },
+        { id: 'vr_systems_design', name: 'تصميم وبناء انظمة الواقع الافتراضي', hours: 3, level: 4, prereq: ['modeling_3d'], coreq: [], hasLab: false },
+        { id: 'haptics_intro', name: 'المقدمة الى تكنولوجيا الهابتك', hours: 3, level: 4, prereq: ['vr_systems_design'], coreq: [], hasLab: false },
+        { id: 'mobile_vr', name: 'الواقع الافتراضي على منصات الجوال', hours: 3, level: 4, prereq: ['vr_systems_design', 'computer_vision'], coreq: [], hasLab: false },
+        { id: 'adv_prog', name: 'برمجة متقدمة', hours: 3, level: 4, prereq: ['data_structures_algo'], coreq: [], hasLab: false },
+        { id: 'db_1', name: 'تصميم وادارة قواعد البيانات (1) (مختبر)', hours: 3, level: 4, prereq: ['data_structures_algo'], coreq: [], hasLab: true },
+        { id: 'web_app_prog', name: 'برمجة تطبيقات الانترنت', hours: 3, level: 4, prereq: ['db_1'], coreq: [], hasLab: false },
+
+        // مواد تخصص اختيارية عامة
+        { id: 'systems_analysis_design', name: 'تحليل وتصميم النظم', hours: 3, level: 4, prereq: [], coreq: [], hasLab: false, isElective: true },
+        { id: 'gis', name: 'انظمة المعلومات الجغرافية', hours: 3, level: 4, prereq: [], coreq: [], hasLab: false, isElective: true },
+        { id: 'special_topics_vr', name: 'موضوعات خاصة في الواقع الافتراضي', hours: 3, level: 4, prereq: [], coreq: [], hasLab: false, isElective: true },
+        { id: 'parallel_computing', name: 'الحوسبة المتوازنة', hours: 3, level: 4, prereq: [], coreq: [], hasLab: false, isElective: true },
+        { id: 'iot', name: 'انترنت الاشياء', hours: 3, level: 4, prereq: [], coreq: [], hasLab: false, isElective: true }
+      ],
+      new: []
+    },
+
     // -------------------------------------------------------------
     // أمن المعلومات والفضاء الإلكتروني (الخطة القديمة)
     // -------------------------------------------------------------
     cyber_security: {
       old: [
-        // المستوى 1
         { id: 'cs_skills_1', name: 'مهارات الحاسوب والتعليم الالكتروني', hours: 3, level: 1, prereq: [], coreq: ['cs_skills_2'], hasLab: false },
         { id: 'cs_skills_2', name: 'مهارات الحاسوب (2) علمية (مختبر ++C)', hours: 3, level: 1, prereq: [], coreq: ['cs_skills_1'], hasLab: true },
         { id: 'unix_intro', name: 'مقدمة الى يونكس', hours: 3, level: 1, prereq: [], coreq: [], hasLab: false },
@@ -69,8 +128,6 @@
         { id: 'calc_1', name: 'التفاضل والتكامل (1)', hours: 3, level: 1, prereq: [], coreq: [], hasLab: false },
         { id: 'ar_app', name: 'لغة عربية تطبيقية', hours: 3, level: 1, prereq: [], coreq: [], hasLab: false },
         { id: 'en_app_1', name: 'لغة انجليزية تطبيقية (1)', hours: 3, level: 1, prereq: [], coreq: [], hasLab: false },
-
-        // المستوى 2
         { id: 'oop', name: 'البرمجة الموجهة للكائنات', hours: 3, level: 2, prereq: ['cs_skills_2'], coreq: [], hasLab: true },
         { id: 'sec_foundations', name: 'مبادئ امن المعلومات والفضاء الالكتروني', hours: 3, level: 2, prereq: ['cs_skills_2'], coreq: [], hasLab: false },
         { id: 'net_1', name: 'شبكات الحاسوب (1)', hours: 3, level: 2, prereq: ['unix_intro'], coreq: [], hasLab: true },
@@ -78,8 +135,6 @@
         { id: 'prob_stat', name: 'الاحتمالات والاحصاء', hours: 3, level: 2, prereq: ['calc_1'], coreq: [], hasLab: false },
         { id: 'discrete_math', name: 'الهياكل والرياضيات المنفصلة', hours: 3, level: 2, prereq: ['calc_1'], coreq: [], hasLab: false },
         { id: 'en_app_2', name: 'لغة انجليزية تطبيقية (2)', hours: 3, level: 2, prereq: ['en_app_1'], coreq: [], hasLab: false },
-
-        // المستوى 3
         { id: 'net_2', name: 'شبكات الحاسوب (2)', hours: 3, level: 3, prereq: ['net_1'], coreq: [], hasLab: true },
         { id: 'num_theory', name: 'مقدمة في نظرية الاعداد', hours: 3, level: 3, prereq: ['discrete_math'], coreq: [], hasLab: false },
         { id: 'crypto_intro', name: 'اساسيات التشفير', hours: 3, level: 3, prereq: ['sec_foundations', 'num_theory'], coreq: [], hasLab: false },
@@ -96,22 +151,18 @@
         { id: 'algorithms', name: 'تصميم وتحليل الخوارزميات', hours: 3, level: 3, prereq: ['data_structures'], coreq: [], hasLab: true },
         { id: 'sys_analysis', name: 'تحليل وتصميم النظم', hours: 3, level: 3, prereq: ['data_structures'], coreq: [], hasLab: false },
         { id: 'net_sec', name: 'أمن شبكات', hours: 3, level: 3, prereq: ['net_2'], coreq: [], hasLab: true },
-
-        // المستوى 4
         { id: 'cyber_law', name: 'قانون واخلاقيات الفضاء الالكتروني', hours: 3, level: 4, prereq: ['net_sec'], coreq: [], hasLab: false },
         { id: 'risk_mgmt', name: 'ادارة مخاطر', hours: 3, level: 4, prereq: ['cyber_law'], coreq: [], hasLab: false },
         { id: 'digital_forensics_course', name: 'تحقيقات جنائية الرقمية', hours: 3, level: 4, prereq: ['cyber_law'], coreq: [], hasLab: false },
         { id: 'penetration_testing', name: 'اختبار اختراق', hours: 3, level: 4, prereq: ['cyber_law'], coreq: [], hasLab: true },
         { id: 'web_prog', name: 'برمجة الويب', hours: 3, level: 4, prereq: ['cyber_law'], coreq: [], hasLab: true },
-
-        // مواد تخصص اختيارية
         { id: 'sec_policy_design', name: 'تصميم وتحليل السياسيات', hours: 3, level: 4, prereq: ['net_sec'], coreq: [], hasLab: false, isElective: true },
         { id: 'iot_sec', name: 'انترنت الاشياء وامنها', hours: 3, level: 4, prereq: ['net_sec'], coreq: [], hasLab: false, isElective: true },
         { id: 'cloud_sec', name: 'امن الحوسبة السحابية', hours: 3, level: 4, prereq: ['net_sec'], coreq: [], hasLab: false, isElective: true },
         { id: 'web_sec', name: 'امن الويب', hours: 3, level: 4, prereq: ['web_prog'], coreq: [], hasLab: false, isElective: true },
         { id: 'cyber_intel_audit', name: 'استخبارات الفضاء الالكتروني والتدقيق', hours: 3, level: 4, prereq: ['cyber_law'], coreq: [], hasLab: false, isElective: true }
       ],
-      new: [] // الخطة الجديدة فارغة
+      new: []
     },
 
     // -------------------------------------------------------------
@@ -157,7 +208,7 @@
         { id: 'speech_rec', name: 'التعرف على الكلام وفهمه', hours: 3, level: 4, prereq: ['nlp'], coreq: [], hasLab: false, isElective: true },
         { id: 'parallel_prog_ai', name: 'البرمجة المتوازية للتطبيقات الذكية', hours: 3, level: 4, prereq: ['algorithms'], coreq: [], hasLab: false, isElective: true }
       ],
-      new: [] // الخطة الجديدة فارغة
+      new: []
     },
 
     // -------------------------------------------------------------
@@ -203,8 +254,13 @@
         { id: 'sec_policies', name: 'تحليل مخاطر السياسات الأمنية', hours: 3, level: 4, prereq: ['df_databases'], coreq: [], hasLab: false, isElective: true },
         { id: 'it_crimes', name: 'جرائم تكنولوجيا المعلومات', hours: 3, level: 4, prereq: ['df_databases'], coreq: [], hasLab: false, isElective: true }
       ],
-      new: [] // الخطة الجديدة فارغة
-    }
+      new: []
+    },
+
+    // التخصصات المتبقية (فارغة تماماً حتى تطلب إضافتها)
+    data_science: { old: [], new: [] },
+    software_eng: { old: [], new: [] },
+    computer_science: { old: [], new: [] }
   };
 
   function formatLocalDate(d) {
@@ -232,7 +288,7 @@
 
     return {
       schemaVersion: SCHEMA_VERSION,
-      student: { firstName: '', majorId: 'cyber_security', planYear: '2023' },
+      student: { firstName: '', majorId: 'virtual_reality', planYear: '2023' },
       courses: [],
       topics: [],
       resources: [],
@@ -390,7 +446,7 @@
 
   function getStudent() { return { ...state.student }; }
   function setStudent(data) {
-    state.student = { firstName: (data.firstName || '').trim(), majorId: (data.majorId || 'cyber_security').trim(), planYear: (data.planYear || '2023').trim() };
+    state.student = { firstName: (data.firstName || '').trim(), majorId: (data.majorId || 'virtual_reality').trim(), planYear: (data.planYear || '2023').trim() };
     return save();
   }
 
@@ -1063,8 +1119,8 @@
   // -------------------------------------------------------------
   // محرك شجرة المتطلبات لجميع التخصصات والخطط (Curriculum Engine)
   // -------------------------------------------------------------
-  function getCurriculumTree(majorId = 'cyber_security', era = 'old') {
-    const majorPlans = CURRICULUM_DATA[majorId] || CURRICULUM_DATA.cyber_security;
+  function getCurriculumTree(majorId = 'virtual_reality', era = 'old') {
+    const majorPlans = CURRICULUM_DATA[majorId] || CURRICULUM_DATA.virtual_reality;
     const list = majorPlans[era] || [];
     const passed = new Set(state.passedCurriculumCourses || []);
 
@@ -1098,8 +1154,8 @@
     return { success: true, passed: state.passedCurriculumCourses };
   }
 
-  function getDependentCurriculumCourses(courseId, majorId = 'cyber_security', era = 'old') {
-    const majorPlans = CURRICULUM_DATA[majorId] || CURRICULUM_DATA.cyber_security;
+  function getDependentCurriculumCourses(courseId, majorId = 'virtual_reality', era = 'old') {
+    const majorPlans = CURRICULUM_DATA[majorId] || CURRICULUM_DATA.virtual_reality;
     const list = majorPlans[era] || [];
     const dependents = new Set();
 
