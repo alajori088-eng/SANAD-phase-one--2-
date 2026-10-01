@@ -1323,3 +1323,45 @@
   renderStudyPlanUI();
 
 })();
+document.addEventListener('DOMContentLoaded', function() {
+    const resourceForm = document.getElementById('form-resource');
+    
+    if (resourceForm) {
+        resourceForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const titleInput = document.getElementById('input-resource-title');
+            const urlInput = document.getElementById('input-resource-url');
+            const typeSelect = document.getElementById('select-resource-type');
+            const fileInput = document.getElementById('input-resource-file');
+            
+            const urlValue = urlInput ? urlInput.value.trim() : '';
+            const hasFiles = fileInput && fileInput.files && fileInput.files.length > 0;
+
+            // إذا ما حط لا رابط ولا ملف، بنطلع له تنبيه
+            if (!urlValue && !hasFiles) {
+                alert('يرجى وضع رابط أو إرفاق ملف واحد على الأقل');
+                return;
+            }
+
+            let fileList = [];
+            if (hasFiles) {
+                Array.from(fileInput.files).forEach(function(f) {
+                    fileList.push({ name: f.name, size: f.size });
+                });
+            }
+
+            if (typeof saveResourceData === 'function') {
+                saveResourceData({
+                    title: titleInput ? titleInput.value : '',
+                    url: urlValue,
+                    type: typeSelect ? typeSelect.value : 'other',
+                    files: fileList
+                });
+            }
+
+            alert('تم حفظ المصدر بنجاح');
+            resourceForm.reset();
+        });
+    }
+});

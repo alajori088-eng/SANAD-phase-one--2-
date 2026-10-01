@@ -953,3 +953,18 @@
   };
 
 })(window);
+// دالة حفظ المرفقات والمصادر
+function saveResourceData(resourceData) {
+    let resources = JSON.parse(localStorage.getItem('sanad_resources') || '[]');
+    const newResource = {
+        id: Date.now(),
+        title: resourceData.title,
+        url: resourceData.url || '',
+        files: resourceData.files || [],
+        type: resourceData.type,
+        createdAt: new Date().toISOString()
+    };
+    resources.push(newResource);
+    localStorage.setItem('sanad_resources', JSON.stringify(resources));
+    return newResource;
+}
