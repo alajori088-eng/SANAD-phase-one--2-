@@ -1,6 +1,6 @@
 /**
  * سند الطالب | SANAD — وحدة البيانات والتخزين والمحرك المشترك (v4 المستقر)
- * دعم كامل للتوثيق التلقائي، دمج المراجعات، وشجرة المتطلبات التفاعلية الحية
+ * دعم كامل للخطط القديمة والحديثة، شجرة الذكاء الاصطناعي والروبوتات، والتحقيقات الجنائية
  */
 
 (function (window) {
@@ -21,8 +21,8 @@
   ];
 
   const MAJORS = [
-    { id: 'digital_forensics', name: 'التحقيقات الجنائية الرقمية' },
     { id: 'ai_robotics', name: 'الذكاء الاصطناعي والروبوتات' },
+    { id: 'digital_forensics', name: 'التحقيقات الجنائية الرقمية' },
     { id: 'data_science', name: 'علم البيانات والذكاء الاصطناعي' },
     { id: 'cyber_security', name: 'الأمن السيبراني' },
     { id: 'software_eng', name: 'هندسة البرمجيات' },
@@ -54,57 +54,111 @@
     other: 'أخرى'
   };
 
-  // بيانات شجرة تخصص التحقيقات الجنائية الرقمية مستخرجة بدقة من الخطة الرسمية
+  // قاعدة بيانات الخطط الشجرية (القديمة والجديدة) للتخصصات
   const CURRICULUM_DATA = {
-    digital_forensics: [
-      // السنة الأولى (المستوى 1)
-      { id: 'cs_skills_1', name: 'مهارات الحاسوب والتعليم الإلكتروني', hours: 3, level: 1, prereq: [], coreq: ['cs_skills_2'], hasLab: false },
-      { id: 'cs_skills_2', name: 'مهارات الحاسوب (2) علمية (مختبر ++C)', hours: 3, level: 1, prereq: [], coreq: ['cs_skills_1'], hasLab: true },
-      { id: 'calc_1', name: 'التفاضل والتكامل (1)', hours: 3, level: 1, prereq: [], coreq: [], hasLab: false },
-      { id: 'unix_intro', name: 'مقدمة إلى يونكس', hours: 3, level: 1, prereq: [], coreq: [], hasLab: false },
-      { id: 'digital_logic', name: 'تصميم المنطق الرقمي', hours: 3, level: 1, prereq: [], coreq: [], hasLab: true },
-      { id: 'ar_app', name: 'لغة عربية تطبيقية', hours: 3, level: 1, prereq: [], coreq: [], hasLab: false },
-      { id: 'en_app_1', name: 'لغة إنجليزية تطبيقية (1)', hours: 3, level: 1, prereq: [], coreq: [], hasLab: false },
+    // -------------------------------------------------------------
+    // تخصص الذكاء الاصطناعي والروبوتات
+    // -------------------------------------------------------------
+    ai_robotics: {
+      old: [
+        // المستوى 1 (سنة أولى)
+        { id: 'cs_skills_1', name: 'مهارات الحاسوب والتعليم الالكتروني', hours: 3, level: 1, prereq: [], coreq: ['cs_skills_2'], hasLab: false },
+        { id: 'cs_skills_2', name: 'مهارات الحاسوب (2) علمية (مختبر ++C)', hours: 3, level: 1, prereq: [], coreq: ['cs_skills_1'], hasLab: true },
+        { id: 'calc_1', name: 'التفاضل والتكامل (1)', hours: 3, level: 1, prereq: [], coreq: [], hasLab: false },
+        { id: 'unix_intro', name: 'مقدمة الى يونكس', hours: 3, level: 1, prereq: [], coreq: [], hasLab: false },
+        { id: 'digital_logic', name: 'تصميم المنطق الرقمي', hours: 3, level: 1, prereq: [], coreq: [], hasLab: true },
+        { id: 'ar_app', name: 'لغة عربية تطبيقية', hours: 3, level: 1, prereq: [], coreq: [], hasLab: false },
+        { id: 'en_app_1', name: 'لغة انجليزية تطبيقية (1)', hours: 3, level: 1, prereq: [], coreq: [], hasLab: false },
 
-      // السنة الثانية (المستوى 2)
-      { id: 'oop', name: 'البرمجة الموجهة للكائنات', hours: 3, level: 2, prereq: ['cs_skills_2'], coreq: [], hasLab: true },
-      { id: 'sec_foundations', name: 'مبادئ أمن المعلومات والفضاء الإلكتروني', hours: 3, level: 2, prereq: ['cs_skills_2'], coreq: [], hasLab: false },
-      { id: 'calc_2', name: 'التفاضل والتكامل (2)', hours: 3, level: 2, prereq: ['calc_1'], coreq: [], hasLab: false },
-      { id: 'discrete_math', name: 'الهياكل والرياضيات المنفصلة', hours: 3, level: 2, prereq: ['calc_1'], coreq: [], hasLab: false },
-      { id: 'prob_stat', name: 'الاحتمالات والإحصاء', hours: 3, level: 2, prereq: ['calc_1'], coreq: [], hasLab: false },
-      { id: 'en_app_2', name: 'لغة إنجليزية تطبيقية (2)', hours: 3, level: 2, prereq: ['en_app_1'], coreq: [], hasLab: false },
-      { id: 'os_df', name: 'نظم التشغيل للتحقيقات الجنائية', hours: 3, level: 2, prereq: ['unix_intro', 'digital_logic'], coreq: [], hasLab: false },
+        // المستوى 2 (سنة ثانية)
+        { id: 'oop', name: 'البرمجة الموجهة للكائنات', hours: 3, level: 2, prereq: ['cs_skills_2'], coreq: [], hasLab: true },
+        { id: 'calc_2', name: 'التفاضل والتكامل (2)', hours: 3, level: 2, prereq: ['calc_1'], coreq: [], hasLab: false },
+        { id: 'linear_algebra', name: 'الجبر الخطي', hours: 3, level: 2, prereq: ['calc_1'], coreq: [], hasLab: false },
+        { id: 'prob_stat', name: 'الاحتمالات والاحصاء', hours: 3, level: 2, prereq: ['calc_1'], coreq: [], hasLab: false },
+        { id: 'arch', name: 'معمارية الحاسوب', hours: 3, level: 2, prereq: ['digital_logic'], coreq: [], hasLab: false },
+        { id: 'kinematics_dynamics', name: 'أساسيات الحركية والديناميكا للروبوتات', hours: 3, level: 2, prereq: ['calc_2'], coreq: [], hasLab: false },
+        { id: 'en_app_2', name: 'لغة انجليزية تطبيقية (2)', hours: 3, level: 2, prereq: ['en_app_1'], coreq: [], hasLab: false },
 
-      // السنة الثالثة (المستوى 3)
-      { id: 'data_structures', name: 'هياكل بيانات', hours: 3, level: 3, prereq: ['oop'], coreq: [], hasLab: false },
-      { id: 'net_1', name: 'شبكات الحاسوب 1', hours: 3, level: 3, prereq: ['sec_foundations'], coreq: [], hasLab: true },
-      { id: 'crypto_intro', name: 'أساسيات التشفير', hours: 3, level: 3, prereq: ['sec_foundations'], coreq: [], hasLab: false },
-      { id: 'ai_intro', name: 'مقدمة في الذكاء الاصطناعي', hours: 3, level: 3, prereq: ['discrete_math'], coreq: [], hasLab: false },
-      { id: 'df_os', name: 'التحقيقات الرقمية لأنظمة التشغيل', hours: 3, level: 3, prereq: ['os_df'], coreq: [], hasLab: false },
-      { id: 'db_1', name: 'تصميم وإدارة قواعد البيانات (1)', hours: 3, level: 3, prereq: ['data_structures'], coreq: [], hasLab: true },
-      { id: 'algorithms', name: 'تصميم وتحليل الخوارزميات', hours: 3, level: 3, prereq: ['data_structures'], coreq: [], hasLab: true },
-      { id: 'net_sec', name: 'أمن شبكات', hours: 3, level: 3, prereq: ['net_1'], coreq: [], hasLab: true },
+        // المستوى 3 (سنة ثالثة)
+        { id: 'data_structures', name: 'هياكل البيانات', hours: 3, level: 3, prereq: ['oop'], coreq: [], hasLab: false },
+        { id: 'ai_intro', name: 'مقدمة في الذكاء الاصطناعي', hours: 3, level: 3, prereq: ['oop'], coreq: [], hasLab: false },
+        { id: 'eng_os', name: 'نظم التشغيل الهندسية', hours: 3, level: 3, prereq: ['arch'], coreq: [], hasLab: false },
+        { id: 'circuits_electronics', name: 'الدوائر والالكترونيات للروبوتات', hours: 3, level: 3, prereq: ['kinematics_dynamics'], coreq: [], hasLab: false },
+        { id: 'algorithms', name: 'تصميم وتحليل الخوارزميات', hours: 3, level: 3, prereq: ['data_structures'], coreq: [], hasLab: true },
+        { id: 'ai_prog', name: 'برمجة الذكاء الاصطناعي', hours: 3, level: 3, prereq: ['ai_intro'], coreq: [], hasLab: false },
+        { id: 'machine_learning', name: 'تعلم الآلة', hours: 3, level: 3, prereq: ['ai_intro', 'prob_stat'], coreq: [], hasLab: false },
+        { id: 'sw_eng', name: 'هندسة البرمجيات', hours: 3, level: 3, prereq: ['ai_intro'], coreq: [], hasLab: false },
+        { id: 'embedded_systems', name: 'الأنظمة المضمنة', hours: 3, level: 3, prereq: ['eng_os'], coreq: [], hasLab: false },
 
-      // السنة الرابعة والتخصصي المتقدم (المستوى 4)
-      { id: 'data_recovery', name: 'استعادة البيانات', hours: 3, level: 4, prereq: ['df_os'], coreq: [], hasLab: true },
-      { id: 'df_networks', name: 'تحقيقات جنائية في الشبكات', hours: 3, level: 4, prereq: ['net_sec'], coreq: [], hasLab: false },
-      { id: 'df_databases', name: 'تحقيقات جنائية قواعد البيانات', hours: 3, level: 4, prereq: ['db_1'], coreq: [], hasLab: false },
-      { id: 'df_privacy', name: 'خصوصية وحماية بيانات', hours: 3, level: 4, prereq: ['crypto_intro'], coreq: [], hasLab: false },
-      { id: 'ml_intro', name: 'تعلم الآلة', hours: 3, level: 4, prereq: ['ai_intro', 'prob_stat'], coreq: [], hasLab: true },
-      { id: 'ai_prog', name: 'برمجة الذكاء الاصطناعي', hours: 3, level: 4, prereq: ['ai_intro'], coreq: [], hasLab: false },
-      { id: 'df_mobile', name: 'تحقيقات الأجهزة النقالة', hours: 3, level: 4, prereq: ['df_networks'], coreq: [], hasLab: false },
-      { id: 'df_justice', name: 'التحقيقات الجنائية الرقمية والعدالة', hours: 3, level: 4, prereq: ['df_networks'], coreq: [], hasLab: false },
-      { id: 'df_fraud', name: 'تدقيق الاحتيال الرقمي', hours: 3, level: 4, prereq: ['df_networks'], coreq: [], hasLab: false, isElective: true },
+        // المستوى 4 (سنة رابعة ومتقدم)
+        { id: 'auto_control_robots', name: 'أنظمة التحكم الآلي للروبوتات', hours: 3, level: 4, prereq: ['embedded_systems'], coreq: [], hasLab: true },
+        { id: 'mobile_robots', name: 'مقدمة الروبوتات المتنقلة', hours: 3, level: 4, prereq: ['machine_learning'], coreq: [], hasLab: false },
+        { id: 'knowledge_rep', name: 'تمثيل المعرفة والاستدلال', hours: 3, level: 4, prereq: ['machine_learning'], coreq: [], hasLab: false },
+        { id: 'nlp', name: 'معالجة اللغة الطبيعية', hours: 3, level: 4, prereq: ['machine_learning'], coreq: [], hasLab: false },
+        { id: 'robot_vision', name: 'روبورت الرؤية', hours: 3, level: 4, prereq: ['mobile_robots'], coreq: [], hasLab: false },
+        { id: 'cognitive_robots', name: 'ريبوتات الادراك (مختبر 1 و 2)', hours: 3, level: 4, prereq: ['mobile_robots'], coreq: [], hasLab: true },
+        { id: 'hri', name: 'تفاعل الانسان والروبوت', hours: 3, level: 4, prereq: ['cognitive_robots'], coreq: [], hasLab: false },
 
-      // مواد تخصص اختيارية وتشريعية
-      { id: 'law_intro', name: 'مدخل إلى علم قانون', hours: 3, level: 4, prereq: [], coreq: [], hasLab: false, isElective: true },
-      { id: 'penal_code', name: 'قانون العقوبات قسم عام', hours: 3, level: 4, prereq: ['law_intro'], coreq: [], hasLab: false, isElective: true },
-      { id: 'cyber_crime_laws', name: 'القوانين الوطنية للجرائم الإلكترونية', hours: 3, level: 4, prereq: ['df_os'], coreq: [], hasLab: false, isElective: true },
-      { id: 'threats_counter', name: 'التهديدات الأمنية ومكافحتها', hours: 3, level: 4, prereq: ['df_os'], coreq: [], hasLab: false, isElective: true },
-      { id: 'sec_policies', name: 'تحليل مخاطر السياسات الأمنية', hours: 3, level: 4, prereq: ['df_databases'], coreq: [], hasLab: false, isElective: true },
-      { id: 'it_crimes', name: 'جرائم تكنولوجيا المعلومات', hours: 3, level: 4, prereq: ['df_databases'], coreq: [], hasLab: false, isElective: true }
-    ]
+        // مواد تخصص اختيارية
+        { id: 'opt_intro', name: 'مقدمة إلى التحسين', hours: 3, level: 4, prereq: ['circuits_electronics'], coreq: [], hasLab: false, isElective: true },
+        { id: 'fuzzy_systems', name: 'الأنظمة المشوشة', hours: 3, level: 4, prereq: ['opt_intro'], coreq: [], hasLab: false, isElective: true },
+        { id: 'deep_learning', name: 'التعلم العميق (مختبر ذكاء 1 و 2)', hours: 3, level: 4, prereq: ['fuzzy_systems'], coreq: [], hasLab: true, isElective: true },
+        { id: 'text_mining', name: 'التنقيب الذكي عن النصوص', hours: 3, level: 4, prereq: ['nlp'], coreq: [], hasLab: false, isElective: true },
+        { id: 'social_net_analysis', name: 'تحليل الشبكات والاجتماعية', hours: 3, level: 4, prereq: ['nlp'], coreq: [], hasLab: false, isElective: true },
+        { id: 'speech_rec', name: 'التعرف على الكلام وفهمه', hours: 3, level: 4, prereq: ['nlp'], coreq: [], hasLab: false, isElective: true },
+        { id: 'parallel_prog_ai', name: 'البرمجة المتوازية للتطبيقات الذكية', hours: 3, level: 4, prereq: ['algorithms'], coreq: [], hasLab: false, isElective: true }
+      ]
+    },
+
+    // -------------------------------------------------------------
+    // تخصص التحقيقات الجنائية الرقمية
+    // -------------------------------------------------------------
+    digital_forensics: {
+      old: [
+        { id: 'cs_skills_1', name: 'مهارات الحاسوب والتعليم الإلكتروني', hours: 3, level: 1, prereq: [], coreq: ['cs_skills_2'], hasLab: false },
+        { id: 'cs_skills_2', name: 'مهارات الحاسوب (2) علمية (مختبر ++C)', hours: 3, level: 1, prereq: [], coreq: ['cs_skills_1'], hasLab: true },
+        { id: 'calc_1', name: 'التفاضل والتكامل (1)', hours: 3, level: 1, prereq: [], coreq: [], hasLab: false },
+        { id: 'unix_intro', name: 'مقدمة إلى يونكس', hours: 3, level: 1, prereq: [], coreq: [], hasLab: false },
+        { id: 'digital_logic', name: 'تصميم المنطق الرقمي', hours: 3, level: 1, prereq: [], coreq: [], hasLab: true },
+        { id: 'ar_app', name: 'لغة عربية تطبيقية', hours: 3, level: 1, prereq: [], coreq: [], hasLab: false },
+        { id: 'en_app_1', name: 'لغة إنجليزية تطبيقية (1)', hours: 3, level: 1, prereq: [], coreq: [], hasLab: false },
+        { id: 'oop', name: 'البرمجة الموجهة للكائنات', hours: 3, level: 2, prereq: ['cs_skills_2'], coreq: [], hasLab: true },
+        { id: 'sec_foundations', name: 'مبادئ أمن المعلومات والفضاء الإلكتروني', hours: 3, level: 2, prereq: ['cs_skills_2'], coreq: [], hasLab: false },
+        { id: 'calc_2', name: 'التفاضل والتكامل (2)', hours: 3, level: 2, prereq: ['calc_1'], coreq: [], hasLab: false },
+        { id: 'discrete_math', name: 'الهياكل والرياضيات المنفصلة', hours: 3, level: 2, prereq: ['calc_1'], coreq: [], hasLab: false },
+        { id: 'prob_stat', name: 'الاحتمالات والإحصاء', hours: 3, level: 2, prereq: ['calc_1'], coreq: [], hasLab: false },
+        { id: 'en_app_2', name: 'لغة إنجليزية تطبيقية (2)', hours: 3, level: 2, prereq: ['en_app_1'], coreq: [], hasLab: false },
+        { id: 'os_df', name: 'نظم التشغيل للتحقيقات الجنائية', hours: 3, level: 2, prereq: ['unix_intro', 'digital_logic'], coreq: [], hasLab: false },
+        { id: 'data_structures', name: 'هياكل بيانات', hours: 3, level: 3, prereq: ['oop'], coreq: [], hasLab: false },
+        { id: 'net_1', name: 'شبكات الحاسوب 1', hours: 3, level: 3, prereq: ['sec_foundations'], coreq: [], hasLab: true },
+        { id: 'crypto_intro', name: 'أساسيات التشفير', hours: 3, level: 3, prereq: ['sec_foundations'], coreq: [], hasLab: false },
+        { id: 'ai_intro', name: 'مقدمة في الذكاء الاصطناعي', hours: 3, level: 3, prereq: ['discrete_math'], coreq: [], hasLab: false },
+        { id: 'df_os', name: 'التحقيقات الرقمية لأنظمة التشغيل', hours: 3, level: 3, prereq: ['os_df'], coreq: [], hasLab: false },
+        { id: 'db_1', name: 'تصميم وإدارة قواعد البيانات (1)', hours: 3, level: 3, prereq: ['data_structures'], coreq: [], hasLab: true },
+        { id: 'algorithms', name: 'تصميم وتحليل الخوارزميات', hours: 3, level: 3, prereq: ['data_structures'], coreq: [], hasLab: true },
+        { id: 'net_sec', name: 'أمن شبكات', hours: 3, level: 3, prereq: ['net_1'], coreq: [], hasLab: true },
+        { id: 'data_recovery', name: 'استعادة البيانات', hours: 3, level: 4, prereq: ['df_os'], coreq: [], hasLab: true },
+        { id: 'df_networks', name: 'تحقيقات جنائية في الشبكات', hours: 3, level: 4, prereq: ['net_sec'], coreq: [], hasLab: false },
+        { id: 'df_databases', name: 'تحقيقات جنائية قواعد البيانات', hours: 3, level: 4, prereq: ['db_1'], coreq: [], hasLab: false },
+        { id: 'df_privacy', name: 'خصوصية وحماية بيانات', hours: 3, level: 4, prereq: ['crypto_intro'], coreq: [], hasLab: false },
+        { id: 'ml_intro', name: 'تعلم الآلة', hours: 3, level: 4, prereq: ['ai_intro', 'prob_stat'], coreq: [], hasLab: true },
+        { id: 'ai_prog', name: 'برمجة الذكاء الاصطناعي', hours: 3, level: 4, prereq: ['ai_intro'], coreq: [], hasLab: false },
+        { id: 'df_mobile', name: 'تحقيقات الأجهزة النقالة', hours: 3, level: 4, prereq: ['df_networks'], coreq: [], hasLab: false },
+        { id: 'df_justice', name: 'التحقيقات الجنائية الرقمية والعدالة', hours: 3, level: 4, prereq: ['df_networks'], coreq: [], hasLab: false },
+        { id: 'df_fraud', name: 'تدقيق الاحتيال الرقمي', hours: 3, level: 4, prereq: ['df_networks'], coreq: [], hasLab: false, isElective: true },
+        { id: 'law_intro', name: 'مدخل إلى علم قانون', hours: 3, level: 4, prereq: [], coreq: [], hasLab: false, isElective: true },
+        { id: 'penal_code', name: 'قانون العقوبات قسم عام', hours: 3, level: 4, prereq: ['law_intro'], coreq: [], hasLab: false, isElective: true },
+        { id: 'cyber_crime_laws', name: 'القوانين الوطنية للجرائم الإلكترونية', hours: 3, level: 4, prereq: ['df_os'], coreq: [], hasLab: false, isElective: true },
+        { id: 'threats_counter', name: 'التهديدات الأمنية ومكافحتها', hours: 3, level: 4, prereq: ['df_os'], coreq: [], hasLab: false, isElective: true },
+        { id: 'sec_policies', name: 'تحليل مخاطر السياسات الأمنية', hours: 3, level: 4, prereq: ['df_databases'], coreq: [], hasLab: false, isElective: true },
+        { id: 'it_crimes', name: 'جرائم تكنولوجيا المعلومات', hours: 3, level: 4, prereq: ['df_databases'], coreq: [], hasLab: false, isElective: true }
+      ]
+    }
   };
+
+  // ربط الخطة الجديدة مؤقتاً بالقديمة لحين استيراد صور الخطط الجديدة
+  CURRICULUM_DATA.ai_robotics.new = CURRICULUM_DATA.ai_robotics.old;
+  CURRICULUM_DATA.digital_forensics.new = CURRICULUM_DATA.digital_forensics.old;
 
   function formatLocalDate(d) {
     const year = d.getFullYear();
@@ -131,12 +185,12 @@
 
     return {
       schemaVersion: SCHEMA_VERSION,
-      student: { firstName: '', majorId: 'digital_forensics', planYear: '2023' },
+      student: { firstName: '', majorId: 'ai_robotics', planYear: '2023' },
       courses: [],
       topics: [],
       resources: [],
       sections: [],
-      passedCurriculumCourses: [], // المواد المجتازة في شجرة المتطلبات
+      passedCurriculumCourses: [],
       scheduleConstraints: {
         earliestStart: '08:00',
         latestEnd: '18:00',
@@ -287,10 +341,9 @@
     return { success: true };
   }
 
-  // إدارة الطالب والمواد
   function getStudent() { return { ...state.student }; }
   function setStudent(data) {
-    state.student = { firstName: (data.firstName || '').trim(), majorId: (data.majorId || 'digital_forensics').trim(), planYear: (data.planYear || '2023').trim() };
+    state.student = { firstName: (data.firstName || '').trim(), majorId: (data.majorId || 'ai_robotics').trim(), planYear: (data.planYear || '2023').trim() };
     return save();
   }
 
@@ -383,7 +436,6 @@
     return save();
   }
 
-  // الشعب والجدول الدراسي
   function getSections() { return [...state.sections]; }
   function getSectionsByCourse(courseId) { return state.sections.filter(s => s.courseId === courseId); }
   function addSection(data) {
@@ -578,10 +630,6 @@
     };
   }
 
-  // -------------------------------------------------------------
-  // محرك خطة الدراسة الحتمي (Study Plan Engine)
-  // -------------------------------------------------------------
-
   function getStudyPlan() { return JSON.parse(JSON.stringify(state.studyPlan)); }
   function setStudyPlanSettings(newSettings) {
     state.studyPlan.settings = { ...state.studyPlan.settings, ...newSettings };
@@ -747,7 +795,6 @@
     const affectedTasksDeficit = [];
     let totalUnscheduledMinutes = 0;
 
-    // 1. جدولة جلسات المراجعة
     activeTasks.forEach(task => {
       if (task.reviewMinutesRequired > 0 && task.examDate) {
         let revNeeded = task.reviewMinutesRequired;
@@ -798,7 +845,6 @@
       }
     });
 
-    // 2. جدولة الجلسات العادية
     activeTasks.forEach(task => {
       let needed = task.remainingMinutes;
       const examDateStr = task.examDate || '9999-12-31';
@@ -968,10 +1014,11 @@
   }
 
   // -------------------------------------------------------------
-  // منطق شجرة المتطلبات التفاعلية (Curriculum Tree Engine)
+  // محرك شجرة المتطلبات لجميع التخصصات والخطط (Curriculum Engine)
   // -------------------------------------------------------------
-  function getCurriculumTree(majorId = 'digital_forensics') {
-    const list = CURRICULUM_DATA[majorId] || CURRICULUM_DATA.digital_forensics;
+  function getCurriculumTree(majorId = 'ai_robotics', era = 'old') {
+    const majorPlans = CURRICULUM_DATA[majorId] || CURRICULUM_DATA.ai_robotics;
+    const list = majorPlans[era] || majorPlans['old'] || majorPlans['new'] || [];
     const passed = new Set(state.passedCurriculumCourses || []);
 
     return list.map(item => {
@@ -1004,8 +1051,9 @@
     return { success: true, passed: state.passedCurriculumCourses };
   }
 
-  function getDependentCurriculumCourses(courseId, majorId = 'digital_forensics') {
-    const list = CURRICULUM_DATA[majorId] || CURRICULUM_DATA.digital_forensics;
+  function getDependentCurriculumCourses(courseId, majorId = 'ai_robotics', era = 'old') {
+    const majorPlans = CURRICULUM_DATA[majorId] || CURRICULUM_DATA.ai_robotics;
+    const list = majorPlans[era] || majorPlans['old'] || majorPlans['new'] || [];
     const dependents = new Set();
 
     function findChildren(parentId) {

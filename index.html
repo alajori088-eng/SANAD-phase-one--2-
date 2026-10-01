@@ -97,38 +97,47 @@
       </div>
     </section>
 
-    <!-- ================================================================= -->
-    <!-- واجهة شجرة المتطلبات التفاعلية (Curriculum Tree Workspace) -->
-    <!-- ================================================================= -->
+    <!-- واجهة شجرة المتطلبات التفاعلية لجميع التخصصات والخطط -->
     <section id="curriculum" class="curriculum-section workspace-view" aria-labelledby="curriculum-heading">
       <div class="section-header">
         <div class="section-pre">خريطة المواد التفاعلية • تتبع فتح المواد ومسار الخطر</div>
-        <h2 id="curriculum-heading" class="section-title">شجرة المتطلبات: التحقيقات الجنائية الرقمية</h2>
+        <h2 id="curriculum-heading" class="section-title">شجرة المتطلبات الأكاديمية</h2>
       </div>
 
-      <!-- لوحة التحكم السريعة بالشجرة -->
+      <!-- شريط التحكم باختيار التخصص والتبديل بين الخطط القديمة والجديدة -->
       <div class="tree-control-bar">
+        <div style="display:flex; gap:var(--space-md); align-items:center; flex-wrap:wrap;">
+          <div class="form-group" style="margin:0;">
+            <select id="tree-major-select" class="form-select" style="min-width:240px; font-weight:bold;">
+              <option value="ai_robotics" selected>الذكاء الاصطناعي والروبوتات</option>
+              <option value="digital_forensics">التحقيقات الجنائية الرقمية</option>
+              <option value="data_science">علم البيانات والذكاء الاصطناعي</option>
+              <option value="cyber_security">الأمن السيبراني</option>
+              <option value="software_eng">هندسة البرمجيات</option>
+              <option value="computer_science">علم الحاسوب</option>
+            </select>
+          </div>
+          <div class="plan-view-tabs">
+            <button type="button" class="plan-tab-btn" id="btn-era-new">🌟 الخطة الجديدة</button>
+            <button type="button" class="plan-tab-btn active" id="btn-era-old">📜 الخطة القديمة</button>
+          </div>
+        </div>
+
         <div class="tree-stats-row">
           <div class="tree-stat-pill">
-            <span>🟢 المواد المجتازة:</span> <strong id="tree-passed-count">0</strong>
+            <span>🟢 المجتازة:</span> <strong id="tree-passed-count">0</strong>
           </div>
           <div class="tree-stat-pill">
-            <span>🔵 المفتوحة للتسجيل:</span> <strong id="tree-available-count">0</strong>
+            <span>🔵 المفتوحة:</span> <strong id="tree-available-count">0</strong>
           </div>
           <div class="tree-stat-pill">
             <span>🔒 المغلقة:</span> <strong id="tree-locked-count">0</strong>
           </div>
         </div>
-
-        <div style="font-size: 0.85rem; color: var(--color-muted);">
-          💡 <strong>اضغط على أي مادة</strong> لإضاءة كافة المواد التي ستتعطل عليك إذا أسقطتها!
-        </div>
       </div>
 
-      <!-- تنبيه مسار التأثير والخطر عند الضغط على مادة -->
       <div id="tree-impact-banner" class="tree-impact-card" style="display: none;"></div>
 
-      <!-- مفتاح رموز الخريطة الأكاديمي -->
       <div class="tree-legend-box">
         <div class="legend-item"><span class="legend-color legend-passed"></span> مادة اجتزتها بنجاح</div>
         <div class="legend-item"><span class="legend-color legend-available"></span> مفتوحة للتسجيل هذا الفصل</div>
@@ -137,11 +146,10 @@
         <div class="legend-item"><span class="legend-badge">⭐</span> مادة تخصص اختيارية</div>
       </div>
 
-      <!-- شبكة أعمدة المستويات الأربعة -->
       <div id="curriculum-tree-container" class="curriculum-tree-grid"></div>
     </section>
 
-    <!-- واجهة 2: «خطة الدراسة» -->
+    <!-- واجهة «خطة الدراسة» -->
     <section id="study-plan" class="study-plan-section workspace-view" aria-labelledby="study-plan-heading">
       <div class="section-header">
         <div class="section-pre">الأداة الثالثة المفعلة • تنظيم المذاكرة والامتحانات</div>
@@ -192,10 +200,7 @@
             <button type="button" class="plan-tab-btn active" id="plan-tab-today">📅 خطة اليوم</button>
             <button type="button" class="plan-tab-btn" id="plan-tab-week">🗓️ خطة الأسبوع الكاملة</button>
           </div>
-
-          <span style="font-size: 0.8rem; color: var(--color-muted);">
-            💡 الناتج توزيع مقترح وفق القواعد المحددة، وليس ضماناً لأفضل توزيع ممكن.
-          </span>
+          <span style="font-size: 0.8rem; color: var(--color-muted);">💡 الناتج توزيع مقترح وفق القواعد المحددة.</span>
         </div>
       </div>
 
@@ -203,7 +208,7 @@
       <div id="plan-view-week" style="display: none;"></div>
     </section>
 
-    <!-- واجهة 3: «رتّب دوامي» -->
+    <!-- واجهة «رتّب دوامي» -->
     <section id="schedule" class="schedule-section workspace-view" aria-labelledby="schedule-heading">
       <div class="section-header">
         <div class="section-pre">الأداة الثانية المفعلة</div>
@@ -212,16 +217,14 @@
 
       <div class="disclaimer-banner" role="note">
         <span>ℹ️</span>
-        <span><strong>تنويه:</strong> الجداول مبنية على مدخلاتك، ولا تعكس توفر المقاعد أو الاتصال بنظام تسجيل الجامعة.</span>
+        <span><strong>تنويه:</strong> الجداول مبنية على مدخلاتك، ولا تعكس توفر المقاعد في الجامعة.</span>
       </div>
 
       <div id="saved-schedule-outdated-alert" class="alert-banner" style="display: none; margin-bottom: var(--space-lg);" role="alert">
         <span>⚠️</span>
         <div>
           <strong>تنبيه: يحتاج الجدول المحفوظ إلى مراجعة!</strong>
-          <p style="font-size: 0.85rem; margin-top: 2px;">
-            تم تعديل بعض الشعب أو المواد بعد تاريخ حفظ جدولك الحالي؛ يُرجى إعادة توليد الجدول.
-          </p>
+          <p style="font-size: 0.85rem; margin-top: 2px;">تم تعديل بعض الشعب بعد حفظ جدولك الحالي؛ يُرجى إعادة توليد الجدول.</p>
         </div>
       </div>
 
@@ -316,7 +319,7 @@
       </div>
     </section>
 
-    <!-- واجهة 4: «تخصصي وموادي» -->
+    <!-- واجهة «تخصصي وموادي» -->
     <section id="my-courses" class="courses-section workspace-view" aria-labelledby="courses-heading">
       <div class="section-header">
         <div class="section-pre">الأداة الأولى</div>
@@ -352,23 +355,23 @@
       </div>
     </section>
 
-    <!-- واجهة 5: «التخصصات» -->
+    <!-- واجهة «التخصصات» -->
     <section id="majors" class="majors-section workspace-view">
       <div class="section-header">
         <div class="section-pre">الكلية والبرامج</div>
         <h2 class="section-title">تخصصات كلية الذكاء الاصطناعي</h2>
       </div>
       <div class="cards-grid">
-        <article class="info-card"><h3>التحقيقات الجنائية الرقمية</h3><p>جمع واستخراج الأدلة الرقمية وتحليل الحوادث واستعادة البيانات والتحقيق في الجرائم الإلكترونية.</p></article>
         <article class="info-card"><h3>الذكاء الاصطناعي والروبوتات</h3><p>الأنظمة الذكية، تعلم الآلة، والتحكم بالروبوتات.</p></article>
         <article class="info-card"><h3>علم البيانات والذكاء الاصطناعي</h3><p>تحليل البيانات الضخمة وبناء النماذج التنبؤية.</p></article>
         <article class="info-card"><h3>الأمن السيبراني</h3><p>حماية الشبكات والبيانات واختبار الاختراق الرقمي.</p></article>
+        <article class="info-card"><h3>التحقيقات الجنائية الرقمية</h3><p>جمع واستخراج الأدلة الرقمية وتحليل الحوادث واستعادة البيانات والتحقيق في الجرائم الإلكترونية.</p></article>
         <article class="info-card"><h3>هندسة البرمجيات</h3><p>تصميم النظم البرمجية الكبيرة وإدارة دورة حياتها.</p></article>
         <article class="info-card"><h3>علم الحاسوب</h3><p>الخوارزميات، بنية الحواسب، والأساس النظري والعملي.</p></article>
       </div>
     </section>
 
-    <!-- واجهة 6: «الأدوات» -->
+    <!-- واجهة «الأدوات» -->
     <section id="tools" class="tools-section workspace-view">
       <div class="section-header">
         <div class="section-pre">أدوات الطالب</div>
@@ -393,7 +396,7 @@
       </div>
     </section>
 
-    <!-- واجهة 7: «عن سند» -->
+    <!-- واجهة «عن سند» -->
     <section id="about" class="about-section workspace-view">
       <div class="section-header">
         <div class="section-pre">عن المشروع</div>
@@ -499,7 +502,7 @@
   <div id="modal-study-settings" class="modal-backdrop" role="dialog" aria-modal="true">
     <div class="modal-dialog">
       <div class="modal-header">
-        <h3 class="modal-title">⚙️ إعدادات فترات الفراغ والجلسات</h3>
+        <h3 class="modal-title">⚙️️ إعدادات فترات الفراغ والجلسات</h3>
         <button type="button" class="icon-btn" data-dismiss="modal">✕</button>
       </div>
       <form id="form-study-settings">
@@ -821,7 +824,7 @@
       <form id="form-profile">
         <div class="modal-body">
           <div class="form-group"><label class="form-label">الاسم الأول</label><input type="text" id="input-student-name" class="form-input"></div>
-          <div class="form-group"><label class="form-label">التخصص</label><select id="select-student-major" class="form-select"><option value="digital_forensics">التحقيقات الجنائية الرقمية</option><option value="ai_robotics">الذكاء الاصطناعي والروبوتات</option><option value="data_science">علم البيانات</option><option value="cyber_security">الأمن السيبراني</option><option value="software_eng">هندسة البرمجيات</option><option value="computer_science">علم الحاسوب</option></select></div>
+          <div class="form-group"><label class="form-label">التخصص</label><select id="select-student-major" class="form-select"><option value="ai_robotics">الذكاء الاصطناعي والروبوتات</option><option value="digital_forensics">التحقيقات الجنائية الرقمية</option><option value="data_science">علم البيانات</option><option value="cyber_security">الأمن السيبراني</option><option value="software_eng">هندسة البرمجيات</option><option value="computer_science">علم الحاسوب</option></select></div>
           <div class="form-group"><label class="form-label">سنة الخطة</label><input type="text" id="input-student-year" class="form-input"></div>
         </div>
         <div class="modal-footer"><button type="submit" class="btn btn-primary">حفظ</button></div>

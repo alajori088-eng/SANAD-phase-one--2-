@@ -1,6 +1,6 @@
 /**
  * سند الطالب | SANAD — المحرك البرمجي الموحد والشامل (v4 النهائي المكتمل)
- * تفعيل شجرة المتطلبات التفاعلية، كشف مسار الخطر، وتوجيه مساحات العمل
+ * تفعيل شجرة المتطلبات لجميع التخصصات، التبديل بين الخطط، وكشف مسار الخطر
  */
 
 (function () {
@@ -28,8 +28,12 @@
     globalSearchInput: document.getElementById('global-search-input'),
     searchResultsPanel: document.getElementById('search-results-panel'),
 
-    // عناصر شجرة المتطلبات التفاعلية
+    // عناصر شجرة المتطلبات
     curriculumContainer: document.getElementById('curriculum-tree-container'),
+    curriculumHeading: document.getElementById('curriculum-heading'),
+    treeMajorSelect: document.getElementById('tree-major-select'),
+    btnEraNew: document.getElementById('btn-era-new'),
+    btnEraOld: document.getElementById('btn-era-old'),
     treePassedCount: document.getElementById('tree-passed-count'),
     treeAvailableCount: document.getElementById('tree-available-count'),
     treeLockedCount: document.getElementById('tree-locked-count'),
@@ -159,6 +163,10 @@
   let stagedExtractedData = [];
   let currentGeneratedSchedules = [];
   let currentActiveScheduleIndex = 0;
+
+  // إعدادات الشجرة النشطة
+  let currentTreeMajor = 'ai_robotics';
+  let currentTreeEra = 'old';
   let selectedTreeCourseId = null;
 
   // =============================================================
@@ -219,11 +227,26 @@
   }
 
   // =============================================================
-  // شجرة المتطلبات التفاعلية (Curriculum Tree Rendering & Logic)
+  // شجرة المتطلبات التفاعلية (Curriculum Tree Engine)
   // =============================================================
   function renderCurriculumTree() {
     if (!elements.curriculumContainer) return;
-    const treeCourses = store.getCurriculumTree('digital_forensics');
+
+    const student = store.getStudent();
+    if (!elements.treeMajorSelect.dataset.userChanged && student.majorId) {
+      currentTreeMajor = student.majorId;
+      elements.treeMajorSelect.value = currentTreeMajor;
+    }
+
+    const majorObj = store.MAJORS.find(m => m.id === currentTreeMajor);
+    const majorName = majorObj ? majorObj.name : 'التخصص';
+    const eraName = currentTreeEra === 'new' ? 'الخطة الجديدة' : 'الخطة القديمة';
+
+    if (elements.curriculumHeading) {
+      elements.curriculumHeading.textContent = `شجرة المتطلبات: ${majorName} (${eraName})`;
+    }
+
+    const treeCourses = store.getCurriculumTree(currentTreeMajor, currentTreeEra);
 
     let passedCount = 0;
     let availableCount = 0;
@@ -254,7 +277,7 @@
 
     let dependents = [];
     if (selectedTreeCourseId) {
-      dependents = store.getDependentCurriculumCourses(selectedTreeCourseId, 'digital_forensics');
+      dependents = store.getDependentCurriculumCourses(selectedTreeCourseId, currentTreeMajor, currentTreeEra);
     }
 
     let gridHtml = '';
@@ -314,7 +337,7 @@
 
     elements.curriculumContainer.innerHTML = gridHtml;
 
-    // عرض بانر مسار الخطر
+    // كشف مسار الخطر والتأثير
     if (elements.treeImpactBanner) {
       if (selectedTreeCourseId) {
         const selectedCourse = treeCourses.find(x => x.id === selectedTreeCourseId);
@@ -341,7 +364,31 @@
     }
   }
 
-  // أحداث النقر داخل شجرة المتطلبات
+  // أحداث التبديل بين التخصصات والخطط
+  elements.treeMajorSelect?.addEventListener('change', (e) => {
+    currentTreeMajor = e.target.value;
+    elements.treeMajorSelect.dataset.userChanged = 'true';
+    selectedTreeCourseId = null;
+    renderCurriculumTree();
+  });
+
+  elements.btnEraNew?.addEventListener('click', () => {
+    currentTreeEra = 'new';
+    elements.btnEraNew.classList.add('active');
+    elements.btnEraOld.classList.remove('active');
+    selectedTreeCourseId = null;
+    renderCurriculumTree();
+  });
+
+  elements.btnEraOld?.addEventListener('click', () => {
+    currentTreeEra = 'old';
+    elements.btnEraOld.classList.add('active');
+    elements.btnEraNew.classList.remove('active');
+    selectedTreeCourseId = null;
+    renderCurriculumTree();
+  });
+
+  // أحداث النقر داخل الشجرة التفاعلية
   document.addEventListener('click', (e) => {
     const card = e.target.closest('.tree-course-card');
     const passBtn = e.target.closest('[data-action="toggle-curriculum-pass"]');
@@ -435,7 +482,7 @@
     }
     if (elements.studentMajorBadge) {
       const majorObj = store.MAJORS.find(m => m.id === student.majorId);
-      elements.studentMajorBadge.textContent = majorObj ? majorObj.name : 'التحقيقات الجنائية الرقمية';
+      elements.studentMajorBadge.textContent = majorObj ? majorObj.name : 'الذكاء الاصطناعي والروبوتات';
       elements.studentMajorBadge.style.display = 'inline-block';
     }
     if (elements.studentPlanBadge) {
@@ -447,18 +494,21 @@
   elements.editProfileBtn?.addEventListener('click', () => {
     const s = store.getStudent();
     document.getElementById('input-student-name').value = s.firstName || '';
-    document.getElementById('select-student-major').value = s.majorId || 'digital_forensics';
+    document.getElementById('select-student-major').value = s.majorId || 'ai_robotics';
     document.getElementById('input-student-year').value = s.planYear || '';
     showModal(elements.profileModal);
   });
 
   elements.profileForm?.addEventListener('submit', (e) => {
     e.preventDefault();
+    const newMajor = document.getElementById('select-student-major').value;
     store.setStudent({
       firstName: document.getElementById('input-student-name').value,
-      majorId: document.getElementById('select-student-major').value,
+      majorId: newMajor,
       planYear: document.getElementById('input-student-year').value
     });
+    currentTreeMajor = newMajor;
+    if (elements.treeMajorSelect) elements.treeMajorSelect.value = newMajor;
     renderStudentProfile();
     renderCurriculumTree();
     hideModal(elements.profileModal);
@@ -620,7 +670,7 @@
             </div>
           </div>
           <div style="display:flex; flex-direction:column; gap:4px;">
-            ${res.map(r => `<div style="display:flex; justify-content:space-between; font-size:0.85rem; background:var(--color-bg); padding:4px 8px; border-radius:4px; border:1px solid var(--color-border);"><a href="${store.escapeHtml(r.url || '#')}" target="_blank" style="color:var(--color-primary); text-decoration:none;">🔗 ${store.escapeHtml(r.title)}</a><button type="button" class="icon-btn" data-action="del-res" data-id="${r.id}">✕</button></div>`).join('')}
+            ${res.map(r => `<div style="display:flex; justify-content:space-between; font-size:0.85rem; background:var(--color-bg); padding:4px 8px; border-radius:4px; border:1px solid var(--color-border);"><a href="${store.escapeHtml(r.url \vert{}\vert{} '#')}" target="_blank" style="color:var(--color-primary); text-decoration:none;">🔗 ${store.escapeHtml(r.title)}</a><button type="button" class="icon-btn" data-action="del-res" data-id="${r.id}">✕</button></div>`).join('')}
           </div>
         </div>`;
     }).join('');
